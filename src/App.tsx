@@ -515,13 +515,19 @@ function App() {
                         )}
                       </td>
                       <td className="p-3 text-right">
-                        <div className="flex flex-col gap-1 items-end">
-                          <div>
-                            <button onClick={() => handleTestLink(m.id, 'ita')} className="text-xs text-purple-600 hover:underline mr-2" title="Test link ITA">Test ITA</button>
-                            <button onClick={() => handleTestLink(m.id, 'eng')} className="text-xs text-purple-600 hover:underline mr-2" title="Test link ENG">Test ENG</button>
-                            <button onClick={() => handleEditMarchio(m)} className="text-blue-600 hover:underline mr-2">Modifica</button>
-                            <button onClick={() => handleDeleteMarchio(m.id)} className="text-red-600 hover:underline">Elimina</button>
-                          </div>
+                        <div className="flex items-center gap-1 justify-end">
+                          <button onClick={() => handleTestLink(m.id, 'ita')} className="p-1.5 text-purple-600 hover:bg-purple-100 rounded" title="Test link ITA">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                          </button>
+                          <button onClick={() => handleTestLink(m.id, 'eng')} className="p-1.5 text-purple-600 hover:bg-purple-100 rounded" title="Test link ENG">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                          </button>
+                          <button onClick={() => handleEditMarchio(m)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded" title="Modifica">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                          </button>
+                          <button onClick={() => handleDeleteMarchio(m.id)} className="p-1.5 text-red-600 hover:bg-red-100 rounded" title="Elimina">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                          </button>
                         </div>
                       </td>
                     </tr>

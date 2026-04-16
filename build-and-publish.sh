@@ -54,17 +54,12 @@ echo -e "${GREEN}2. Build Linux (AppImage)...${NC}"
 npm run build:linux
 
 echo ""
-echo -e "${GREEN}3. Build Windows (exe)...${NC}"
-npm run build:win
-
-echo ""
-echo -e "${GREEN}4. Pubblicazione su GitHub...${NC}"
+echo -e "${GREEN}3. Pubblicazione su GitHub...${NC}"
 
 # Crea la release
 RELEASE_FILE_LINUX=$(ls release/*.AppImage 2>/dev/null | head -1)
-RELEASE_FILE_WIN=$(ls release/*.exe 2>/dev/null | head -1)
 
-if [ -z "$RELEASE_FILE_LINUX" ] && [ -z "$RELEASE_FILE_WIN" ]; then
+if [ -z "$RELEASE_FILE_LINUX" ]; then
     echo -e "${RED}Errore: Nessun file di release trovato${NC}"
     exit 1
 fi
@@ -76,19 +71,11 @@ git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
 git push origin "v$NEW_VERSION"
 
 # Crea release su GitHub con file
-if [ -n "$RELEASE_FILE_LINUX" ]; then
-    echo "Upload Linux: $RELEASE_FILE_LINUX"
-    gh release create "v$NEW_VERSION" \
-        --title "Release v$NEW_VERSION" \
-        --notes "Build automatica del $(date '+%d/%m/%Y')" \
-        "$RELEASE_FILE_LINUX"
-fi
-
-if [ -n "$RELEASE_FILE_WIN" ]; then
-    echo "Upload Windows: $RELEASE_FILE_WIN"
-    # Aggiungi file alla release esistente
-    gh release upload "v$NEW_VERSION" "$RELEASE_FILE_WIN" --clobber
-fi
+echo "Upload Linux: $RELEASE_FILE_LINUX"
+gh release create "v$NEW_VERSION" \
+    --title "Release v$NEW_VERSION" \
+    --notes "Build automatica del $(date '+%d/%m/%Y')" \
+    "$RELEASE_FILE_LINUX"
 
 echo ""
 echo -e "${GREEN}========================================${NC}"
@@ -97,6 +84,7 @@ echo -e "${GREEN}========================================${NC}"
 echo ""
 echo "Release creata: https://github.com/zak066/pipenewsgenerator/releases/tag/v$NEW_VERSION"
 echo ""
-echo "Prossimi passi:"
-echo "1. Gli utenti riceveranno la notifica dell'aggiornamento"
-echo "2. Puoi modificare le note della release su GitHub"
+echo "Note:"
+echo "- Build Linux completata e pubblicata"
+echo "- Per Windows: compila sulla tua macchina Windows con 'npm run build:win'"
+echo "- Gli utenti riceveranno la notifica dell'aggiornamento per entrambe le piattaforme"

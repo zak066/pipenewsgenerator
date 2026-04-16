@@ -43,15 +43,11 @@ if exist release rmdir /s /q release
 mkdir release
 
 echo.
-echo %GREEN%2. Build Linux (AppImage)...%NC%
-call npm run build:linux
-
-echo.
-echo %GREEN%3. Build Windows (exe)...%NC%
+echo %GREEN%2. Build Windows (exe)...%NC%
 call npm run build:win
 
 echo.
-echo %GREEN%4. Pubblicazione su GitHub...%NC%
+echo %GREEN%3. Pubblicazione su GitHub...%NC%
 
 REM Crea tag
 git tag -a "v%NEW_VERSION%" -m "Release v%NEW_VERSION%"
@@ -60,17 +56,11 @@ REM Push tag
 git push origin "v%NEW_VERSION%"
 
 REM Cerca file
-for /f "delims=" %%i in ('dir /b release\*.AppImage 2^>nul') do set "RELEASE_FILE_LINUX=%%i"
 for /f "delims=" %%i in ('dir /b release\*.exe 2^>nul') do set "RELEASE_FILE_WIN=%%i"
-
-if defined RELEASE_FILE_LINUX (
-    echo Upload Linux: %RELEASE_FILE_LINUX%
-    gh release create "v%NEW_VERSION%" --title "Release v%NEW_VERSION%" --notes "Build automatica del %date%" "release\%RELEASE_FILE_LINUX%"
-)
 
 if defined RELEASE_FILE_WIN (
     echo Upload Windows: %RELEASE_FILE_WIN%
-    gh release upload "v%NEW_VERSION%" "release\%RELEASE_FILE_WIN%" --clobber
+    gh release create "v%NEW_VERSION%" --title "Release v%NEW_VERSION%" --notes "Build automatica del %date%" "release\%RELEASE_FILE_WIN%"
 )
 
 echo.
@@ -80,8 +70,9 @@ echo %GREEN%========================================%NC%
 echo.
 echo Release creata: https://github.com/zak066/pipenewsgenerator/releases/tag/v%NEW_VERSION%
 echo.
-echo Prossimi passi:
-echo 1. Gli utenti riceveranno la notifica dell'aggiornamento
-echo 2. Puoi modificare le note della release su GitHub
+echo Note:"
+echo "- Build Windows completata e pubblicata"
+echo "- Per Linux: esegui ./build-and-publish.sh sulla macchina Linux"
+echo "- Gli utenti riceveranno la notifica dell'aggiornamento per entrambe le piattaforme"
 
 endlocal

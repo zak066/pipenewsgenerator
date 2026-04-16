@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 // Get version - this will be replaced during build
-const APP_VERSION = '1.0.31';
+const APP_VERSION = '1.0.32';
 
 interface Marchio {
   id: number;
@@ -33,6 +33,7 @@ interface ElectronAPI {
   onUpdateAvailable: (callback: (data: { version: string; releaseNotes?: string }) => void) => void;
   onUpdateProgress: (callback: (data: { percent: number }) => void) => void;
   onUpdateDownloaded: (callback: (data: { version: string }) => void) => void;
+  onUpdateNotAvailable: (callback: () => void) => void;
 }
 
 declare global {
@@ -73,12 +74,14 @@ function App() {
   const [updateDownloading, setUpdateDownloading] = useState(false);
   const [updateProgress, setUpdateProgress] = useState(0);
   const [updateReady, setUpdateReady] = useState(false);
+  const [updateMessage, setUpdateMessage] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
     
     if (window.electronAPI?.onUpdateAvailable) {
       window.electronAPI.onUpdateAvailable((data) => {
+        setUpdateMessage(null);
         setUpdateAvailable(data);
       });
       window.electronAPI.onUpdateProgress((data) => {
@@ -88,6 +91,10 @@ function App() {
       window.electronAPI.onUpdateDownloaded((data) => {
         setUpdateDownloading(false);
         setUpdateReady(true);
+      });
+      window.electronAPI.onUpdateNotAvailable(() => {
+        setUpdateMessage('Applicazione aggiornata - sei già alla versione più recente');
+        setTimeout(() => setUpdateMessage(null), 5000);
       });
     }
   }, []);
@@ -421,6 +428,12 @@ function App() {
               Più tardi
             </button>
           </div>
+        </div>
+      )}
+      
+      {updateMessage && (
+        <div className="fixed top-4 right-4 bg-green-600 text-white p-4 rounded-lg shadow-lg max-w-sm z-50">
+          {updateMessage}
         </div>
       )}
 

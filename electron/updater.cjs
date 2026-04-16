@@ -30,6 +30,9 @@ function initAutoUpdater(window) {
   
   autoUpdater.on('update-not-available', () => {
     log.info('No updates available');
+    if (mainWindow) {
+      mainWindow.webContents.send('update-not-available');
+    }
   });
   
   autoUpdater.on('download-progress', (progress) => {
@@ -55,12 +58,6 @@ function initAutoUpdater(window) {
   
 autoUpdater.on('error', (err) => {
     log.error('AutoUpdater error:', err.message);
-  });
-}
-
-function checkForUpdates() {
-  autoUpdater.checkForUpdates().catch(err => {
-    log.error('Error checking for updates:', err.message);
   });
 }
 

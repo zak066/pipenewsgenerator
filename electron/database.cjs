@@ -49,9 +49,14 @@ function initDatabase() {
   db = new Database(dbPath);
   
   initTables(db);
-
+  
+  log.info('Tables initialized, checking data...');
+  
   const count = db.prepare('SELECT COUNT(*) as count FROM marchi').get();
+  log.info('Marchi count:', count.count);
+  
   if (count.count === 0) {
+    log.info('No marchi found, importing initial data...');
     importInitialData();
   } else {
     const engCheck = db.prepare('SELECT link_eng FROM marchi WHERE link_eng IS NOT NULL AND link_eng != "" LIMIT 1').get();
@@ -62,6 +67,8 @@ function initDatabase() {
   }
   
   const templateCount = db.prepare('SELECT COUNT(*) as count FROM templates WHERE is_default = 1').get();
+  log.info('Templates count:', templateCount.count);
+  
   if (templateCount.count === 0) {
     db.prepare('INSERT INTO templates (nome, header_ita, header_eng, footer_ita, footer_eng, is_default) VALUES (?, ?, ?, ?, ?, 1)')
       .run('default', 

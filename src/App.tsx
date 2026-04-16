@@ -769,6 +769,20 @@ function App() {
                 <a href="https://bitly.com/a/oauth_apps" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Ottieni il token da bit.ly →</a>
               </div>
             </div>
+            <div className="bg-white p-6 rounded shadow max-w-xl mb-4">
+              <h3 className="font-bold mb-3">API TinyURL</h3>
+              <p className="text-sm text-gray-600 mb-3">Inserisci il tuo API token TinyURL (opzionale, necessario per alcune funzionalità).</p>
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  placeholder="Token API TinyURL"
+                  value={settings.tinyurl_token || ''}
+                  onChange={e => setSettings(prev => ({ ...prev, tinyurl_token: e.target.value }))}
+                  className="flex-1 p-2 border rounded"
+                />
+                <button onClick={() => handleSaveSetting('tinyurl_token', settings.tinyurl_token || '')} className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700">Salva</button>
+              </div>
+            </div>
             <div className="bg-white p-6 rounded shadow max-w-xl">
               <h3 className="font-bold mb-3">WhatsApp</h3>
               <p className="text-sm text-gray-600 mb-3">Numero WhatsApp per inviare i messaggi (con prefisso internazionale, es. 393401234567)</p>

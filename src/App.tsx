@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 // Get version - this will be replaced during build
-const APP_VERSION = '1.0.35';
+const APP_VERSION = '1.0.36';
 
 interface Marchio {
   id: number;
@@ -34,6 +34,7 @@ interface ElectronAPI {
   onUpdateProgress: (callback: (data: { percent: number }) => void) => void;
   onUpdateDownloaded: (callback: (data: { version: string }) => void) => void;
   onUpdateNotAvailable: (callback: () => void) => void;
+  onUpdateError: (callback: (data: { message: string }) => void) => void;
 }
 
 declare global {
@@ -95,6 +96,10 @@ function App() {
       });
       window.electronAPI.onUpdateNotAvailable(() => {
         setUpdateMessage('Applicazione aggiornata - sei già alla versione più recente');
+        setTimeout(() => setUpdateMessage(null), 5000);
+      });
+      window.electronAPI.onUpdateError?.((data: { message: string }) => {
+        setUpdateMessage(data.message);
         setTimeout(() => setUpdateMessage(null), 5000);
       });
     }

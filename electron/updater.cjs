@@ -1,4 +1,3 @@
-const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
 const { app } = require('electron');
 const path = require('path');
@@ -8,112 +7,86 @@ let mainWindow = null;
 
 function initAutoUpdater(window) {
   mainWindow = window;
-  
-  autoUpdater.logger = log;
-  autoUpdater.logger.transports.file.level = 'debug';
-  
-  autoUpdater.autoDownload = false;
-  autoUpdater.autoInstallOnAppQuit = true;
-  autoUpdater.currentVersion = app.getVersion();
-  
-  const resourcesPath = process.resourcesPath || app.getAppPath();
-  const latestYamlPath = path.join(resourcesPath, 'latest-linux.yml');
-  log.info('Latest yaml path:', latestYamlPath);
-  
-  if (fs.existsSync(latestYamlPath)) {
-    try {
-      const yamlContent = fs.readFileSync(latestYamlPath, 'utf8');
-      const updateInfo = parseYaml(yamlContent);
-      autoUpdater.updateInfo = updateInfo;
-      log.info('Loaded local update info:', updateInfo);
-    } catch (e) {
-      log.info('Could not load local yaml:', e.message);
+  log.info('=== Manual Updater Initialized ===');
+  log.info('Current version:', app.getVersion());
+}
+
+function getLatestVersion() {
+  try {
+    const resourcesPath = process.resourcesPath;
+    const latestYamlPath = path.join(resourcesPath, 'latest-linux.yml');
+    log.info('Looking for latest-linux.yml at:', latestYamlPath);
+    
+    if (!fs.existsSync(latestYamlPath)) {
+      log.info('latest-linux.yml not found');
+      return null;
     }
-  } else {
-    log.info('latest-linux.yml not found at:', latestYamlPath);
+    
+    const content = fs.readFileSync(latestYamlPath, 'utf8');
+    const match = content.match(/version:\s*([0-9.]+)/);
+    if (match) {
+      const latestVersion = match[1];
+      log.info('Latest version from file:', latestVersion);
+      return latestVersion;
+    }
+  } catch (e) {
+    log.error('Error reading latest-linux.yml:', e.message);
+  }
+  return null;
+}
+
+function checkForUpdates() {
+  const currentVersion = app.getVersion();
+  const latestVersion = getLatestVersion();
+  
+  log.info('Current:', currentVersion, 'Latest:', latestVersion);
+  
+  if (!latestVersion) {
+    log.error('Could not determine latest version');
+    if (mainWindow) {
+      mainWindow.webContents.send('update-error', { message: 'Impossibile verificare gli aggiornamenti' });
+    }
+    return;
   }
   
-  log.info('=== AutoUpdater Debug ===');
-  log.info('Current version:', autoUpdater.currentVersion);
-  log.info('============================');
+  const currentParts = currentVersion.split('.').map(Number);
+  const latestParts = latestVersion.split('.').map(Number);
   
-  autoUpdater.on('checking-for-update', () => {
-    log.info('Checking for updates...');
-  });
+  let isUpdateAvailable = false;
+  for (let i = 0; i < Math.max(currentParts.length, latestParts.length); i++) {
+    const curr = currentParts[i] || 0;
+    const latest = latestParts[i] || 0;
+    if (latest > curr) {
+      isUpdateAvailable = true;
+      break;
+    } else if (latest < curr) {
+      isUpdateAvailable = false;
+      break;
+    }
+  }
   
-  autoUpdater.on('update-available', (info) => {
-    log.info('Update available:', info.version);
+  if (isUpdateAvailable) {
+    log.info('Update available:', latestVersion);
     if (mainWindow) {
       mainWindow.webContents.send('update-available', {
-        version: info.version,
-        releaseNotes: info.releaseNotes
+        version: latestVersion,
+        releaseNotes: 'Nuova versione disponibile'
       });
     }
-  });
-  
-  autoUpdater.on('update-not-available', () => {
+  } else {
     log.info('No updates available');
     if (mainWindow) {
       mainWindow.webContents.send('update-not-available');
     }
-  });
-  
-  autoUpdater.on('download-progress', (progress) => {
-    log.info('Download progress:', progress.percent);
-    if (mainWindow) {
-      mainWindow.webContents.send('update-progress', {
-        percent: progress.percent,
-        bytesPerSecond: progress.bytesPerSecond,
-        transferred: progress.transferred,
-        total: progress.total
-      });
-    }
-  });
-  
-  autoUpdater.on('update-downloaded', (info) => {
-    log.info('Update downloaded:', info.version);
-    if (mainWindow) {
-      mainWindow.webContents.send('update-downloaded', {
-        version: info.version
-      });
-    }
-  });
-  
-  autoUpdater.on('error', (err) => {
-    log.error('AutoUpdater error:', err.message);
-  });
-}
-
-function parseYaml(content) {
-  const result = {};
-  content.split('\n').forEach(line => {
-    const colonIndex = line.indexOf(':');
-    if (colonIndex > 0) {
-      const key = line.substring(0, colonIndex).trim();
-      let value = line.substring(colonIndex + 1).trim();
-      if (value.startsWith("'") && value.endsWith("'")) {
-        value = value.substring(1, value.length - 1);
-      }
-      result[key] = value;
-    }
-  });
-  return result;
-}
-
-function checkForUpdates() {
-  autoUpdater.checkForUpdates().catch(err => {
-    log.error('Error checking for updates:', err.message);
-  });
+  }
 }
 
 function downloadUpdate() {
-  autoUpdater.downloadUpdate().catch(err => {
-    log.error('Error downloading update:', err);
-  });
+  log.info('Download update clicked - not implemented for local updates');
 }
 
 function installUpdate() {
-  autoUpdater.quitAndInstall(false, true);
+  log.info('Install update clicked - not implemented for local updates');
 }
 
 module.exports = {

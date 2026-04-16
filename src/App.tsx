@@ -44,6 +44,8 @@ function App() {
   const [settings, setSettings] = useState({ bitly_token: '' });
   const [generatedFiles, setGeneratedFiles] = useState<{ ita: string; eng: string } | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [orderedMarchi, setOrderedMarchi] = useState<Marchio[]>([]);
+  const [draggedItem, setDraggedItem] = useState<number | null>(null);
 
   const [formData, setFormData] = useState({ nome: '', link_ita: '', link_eng: '' });
   const [generatingLink, setGeneratingLink] = useState<{ field: 'ita' | 'eng'; loading: boolean } | null>(null);
@@ -185,6 +187,7 @@ function App() {
     setGenerating(true);
     try {
       const selectedMarchi = marchi.filter(m => selectedIds.has(m.id));
+      setOrderedMarchi(selectedMarchi);
       const result = await (window as any).electronAPI?.generateFiles?.({ marchi: selectedMarchi, templates });
       setGeneratedFiles(result);
     } catch (err) {
@@ -194,7 +197,19 @@ function App() {
   };
 
   const handleDownload = async (content: string, filename: string) => {
-    await (window as any).electronAPI?.saveFile?.({ filename, content });
+    let finalContent = content;
+    if (orderedMarchi.length > 0) {
+      const isIta = filename.includes('ita');
+      let body = '';
+      orderedMarchi.forEach(m => {
+        body += '_' + m.nome + '_\n' + (isIta ? (m.link_ita || '') : (m.link_eng || '')) + '\n\n';
+      });
+      finalContent = templates.header_ita + '\n\n' + body + templates.footer_ita;
+      if (!isIta) {
+        finalContent = templates.header_eng + '\n\n' + body + templates.footer_eng;
+      }
+    }
+    await (window as any).electronAPI?.saveFile?.({ filename, content: finalContent });
   };
 
   const handleExportMarchi = async () => {
@@ -206,6 +221,59 @@ function App() {
     } catch (err) {
       console.error('Error exporting marchi:', err);
     }
+  };
+
+  const handleDragStart = (index: number) => {
+    setDraggedItem(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (index: number) => {
+    if (draggedItem === null) return;
+    const newOrder = [...orderedMarchi];
+    const [removed] = newOrder.splice(draggedItem, 1);
+    newOrder.splice(index, 0, removed);
+    setOrderedMarchi(newOrder);
+    setDraggedItem(null);
+    
+    let itaContent = templates.header_ita + '\n\n';
+    let engContent = templates.header_eng + '\n\n';
+    newOrder.forEach(m => {
+      itaContent += '_' + m.nome + '_\n' + (m.link_ita || '') + '\n\n';
+      engContent += '_' + m.nome + '_\n' + (m.link_eng || '') + '\n\n';
+    });
+    itaContent += templates.footer_ita;
+    engContent += templates.footer_eng;
+    setGeneratedFiles({ ita: itaContent, eng: engContent });
+  };
+
+  const sendToWhatsApp = (lang: 'ita' | 'eng') => {
+    if (!settings.whatsapp_number) {
+      alert('Configura il numero WhatsApp nelle impostazioni');
+      return;
+    }
+    
+    let message = '';
+    if (lang === 'ita') {
+      message = templates.header_ita + '\n\n';
+      orderedMarchi.forEach(m => {
+        message += '_' + m.nome + '_\n' + (m.link_ita || '') + '\n\n';
+      });
+      message += templates.footer_ita;
+    } else {
+      message = templates.header_eng + '\n\n';
+      orderedMarchi.forEach(m => {
+        message += '_' + m.nome + '_\n' + (m.link_eng || '') + '\n\n';
+      });
+      message += templates.footer_eng;
+    }
+    
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://web.whatsapp.com/send?phone=${settings.whatsapp_number}&text=${encodedMessage}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   const selectedCount = selectedIds.size;
@@ -458,20 +526,94 @@ function App() {
             </button>
 
             {generatedFiles && (
-              <div className="mt-6 grid grid-cols-2 gap-6">
-                <div className="bg-white p-4 rounded shadow">
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className="font-bold">pipe-ita.txt</h3>
-                    <button onClick={() => handleDownload(generatedFiles.ita, 'pipe-ita.txt')} className="text-blue-600 hover:underline">Scarica ↓</button>
+              <div className="mt-6">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="font-bold text-lg">Ordina marchi (drag & drop)</h3>
+                  <div className="flex gap-4">
+                    <button onClick={() => handleDownload(generatedFiles.ita, 'pipe-ita.txt')} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                      Scarica ITA ↓
+                    </button>
+                    <button onClick={() => handleDownload(generatedFiles.eng, 'pipe-en.txt')} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                      Scarica ENG ↓
+                    </button>
                   </div>
-                  <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-3 rounded max-h-96 overflow-auto">{generatedFiles.ita}</pre>
                 </div>
-                <div className="bg-white p-4 rounded shadow">
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className="font-bold">pipe-en.txt</h3>
-                    <button onClick={() => handleDownload(generatedFiles.eng, 'pipe-en.txt')} className="text-blue-600 hover:underline">Scarica ↓</button>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="bg-white p-4 rounded shadow">
+                    <h3 className="font-bold mb-3">pipe-ita.txt</h3>
+                    <ul className="space-y-1">
+                      {orderedMarchi.map((m, idx) => (
+                        <li
+                          key={m.id + '-ita-' + idx}
+                          draggable
+                          onDragStart={() => handleDragStart(idx)}
+                          onDragOver={(e) => handleDragOver(e, idx)}
+                          onDrop={() => handleDrop(idx)}
+                          className={`p-2 rounded cursor-move flex items-center gap-2 ${draggedItem === idx ? 'opacity-50 bg-gray-100' : 'bg-gray-50 hover:bg-gray-100'}`}
+                        >
+                          <span className="text-gray-400">☰</span>
+                          <span className="font-medium">{m.nome}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-3 rounded max-h-96 overflow-auto">{generatedFiles.eng}</pre>
+                  <div className="bg-white p-4 rounded shadow">
+                    <h3 className="font-bold mb-3">pipe-en.txt</h3>
+                    <ul className="space-y-1">
+                      {orderedMarchi.map((m, idx) => (
+                        <li
+                          key={m.id + '-eng-' + idx}
+                          className="p-2 rounded bg-gray-50 flex items-center gap-2"
+                        >
+                          <span className="text-gray-400">☰</span>
+                          <span className="font-medium">{m.nome}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+                
+                <div className="mt-6 grid grid-cols-2 gap-6">
+                  <div className="bg-white p-4 rounded shadow">
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="font-bold">Anteprima ITA</h3>
+                      {settings.whatsapp_number && (
+                        <button 
+                          onClick={() => sendToWhatsApp('ita')}
+                          className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-sm"
+                        >
+                          📱 Invia a WhatsApp
+                        </button>
+                      )}
+                    </div>
+                    <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-3 rounded max-h-64 overflow-auto">
+                      {templates.header_ita}
+                      
+                      {orderedMarchi.map(m => `_${m.nome}_\n${m.link_ita || ''}`).join('\n\n')}
+                      
+                      {templates.footer_ita}
+                    </pre>
+                  </div>
+                  <div className="bg-white p-4 rounded shadow">
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="font-bold">Anteprima ENG</h3>
+                      {settings.whatsapp_number && (
+                        <button 
+                          onClick={() => sendToWhatsApp('eng')}
+                          className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-sm"
+                        >
+                          📱 Invia a WhatsApp
+                        </button>
+                      )}
+                    </div>
+                    <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-3 rounded max-h-64 overflow-auto">
+                      {templates.header_eng}
+                      
+                      {orderedMarchi.map(m => `_${m.nome}_\n${m.link_eng || ''}`).join('\n\n')}
+                      
+                      {templates.footer_eng}
+                    </pre>
+                  </div>
                 </div>
               </div>
             )}
@@ -481,7 +623,7 @@ function App() {
         {page === 'settings' && (
           <div>
             <h1 className="text-2xl font-bold mb-4">Impostazioni</h1>
-            <div className="bg-white p-6 rounded shadow max-w-xl">
+            <div className="bg-white p-6 rounded shadow max-w-xl mb-4">
               <h3 className="font-bold mb-3">API Bit.ly</h3>
               <p className="text-sm text-gray-600 mb-3">Inserisci il tuo API token bit.ly per generare link corti automaticamente.</p>
               <div className="flex gap-2">
@@ -496,6 +638,20 @@ function App() {
               </div>
               <div className="mt-4 text-sm text-gray-500">
                 <a href="https://bitly.com/a/oauth_apps" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Ottieni il token da bit.ly →</a>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded shadow max-w-xl">
+              <h3 className="font-bold mb-3">WhatsApp</h3>
+              <p className="text-sm text-gray-600 mb-3">Numero WhatsApp per inviare i messaggi (con prefisso internazionale, es. 393401234567)</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Numero WhatsApp (es. 393401234567)"
+                  value={settings.whatsapp_number || ''}
+                  onChange={e => setSettings(prev => ({ ...prev, whatsapp_number: e.target.value }))}
+                  className="flex-1 p-2 border rounded"
+                />
+                <button onClick={() => handleSaveSetting('whatsapp_number', settings.whatsapp_number || '')} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Salva</button>
               </div>
             </div>
           </div>

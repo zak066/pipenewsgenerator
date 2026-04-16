@@ -1,56 +1,23 @@
 const log = require('electron-log');
 const { app } = require('electron');
-const path = require('path');
-const fs = require('fs');
 
 let mainWindow = null;
+
+const LATEST_VERSION = '1.0.36';
 
 function initAutoUpdater(window) {
   mainWindow = window;
   log.info('=== Manual Updater Initialized ===');
   log.info('Current version:', app.getVersion());
-}
-
-function getLatestVersion() {
-  try {
-    const resourcesPath = process.resourcesPath;
-    const latestYamlPath = path.join(resourcesPath, 'latest-linux.yml');
-    log.info('Looking for latest-linux.yml at:', latestYamlPath);
-    
-    if (!fs.existsSync(latestYamlPath)) {
-      log.info('latest-linux.yml not found');
-      return null;
-    }
-    
-    const content = fs.readFileSync(latestYamlPath, 'utf8');
-    const match = content.match(/version:\s*([0-9.]+)/);
-    if (match) {
-      const latestVersion = match[1];
-      log.info('Latest version from file:', latestVersion);
-      return latestVersion;
-    }
-  } catch (e) {
-    log.error('Error reading latest-linux.yml:', e.message);
-  }
-  return null;
+  log.info('Latest version:', LATEST_VERSION);
 }
 
 function checkForUpdates() {
   const currentVersion = app.getVersion();
-  const latestVersion = getLatestVersion();
-  
-  log.info('Current:', currentVersion, 'Latest:', latestVersion);
-  
-  if (!latestVersion) {
-    log.error('Could not determine latest version');
-    if (mainWindow) {
-      mainWindow.webContents.send('update-error', { message: 'Impossibile verificare gli aggiornamenti' });
-    }
-    return;
-  }
-  
   const currentParts = currentVersion.split('.').map(Number);
-  const latestParts = latestVersion.split('.').map(Number);
+  const latestParts = LATEST_VERSION.split('.').map(Number);
+  
+  log.info('Current:', currentVersion, 'Latest:', LATEST_VERSION);
   
   let isUpdateAvailable = false;
   for (let i = 0; i < Math.max(currentParts.length, latestParts.length); i++) {
@@ -66,10 +33,10 @@ function checkForUpdates() {
   }
   
   if (isUpdateAvailable) {
-    log.info('Update available:', latestVersion);
+    log.info('Update available:', LATEST_VERSION);
     if (mainWindow) {
       mainWindow.webContents.send('update-available', {
-        version: latestVersion,
+        version: LATEST_VERSION,
         releaseNotes: 'Nuova versione disponibile'
       });
     }
@@ -82,11 +49,13 @@ function checkForUpdates() {
 }
 
 function downloadUpdate() {
-  log.info('Download update clicked - not implemented for local updates');
+  log.info('Download update - opens GitHub releases');
+  const { shell } = require('electron');
+  shell.openExternal('https://github.com/zak066/pipenewsgenerator/releases');
 }
 
 function installUpdate() {
-  log.info('Install update clicked - not implemented for local updates');
+  log.info('Install update - not automatic, user must download manually');
 }
 
 module.exports = {

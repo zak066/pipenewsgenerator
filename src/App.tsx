@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 // Get version - this will be replaced during build
-const APP_VERSION = '1.0.1';
+const APP_VERSION = '1.0.2';
 
 interface Marchio {
   id: number;
@@ -17,6 +17,7 @@ interface ElectronAPI {
   updateMarchio: (marchio: Marchio) => Promise<Marchio>;
   deleteMarchio: (id: number) => Promise<{ success: boolean }>;
   generateBitly: (url: string) => Promise<{ shortLink: string; error?: string }>;
+  convertTinyUrl: (url: string) => Promise<{ shortLink: string; error?: string }>;
   testLink: (url: string) => Promise<{ status: string; statusCode?: number; message: string }>;
   getSettings: () => Promise<Record<string, string>>;
   setSetting: (key: string, value: string) => Promise<{ success: boolean }>;
@@ -199,6 +200,34 @@ function App() {
       ...prev,
       [id]: { ...prev[id], [type]: result }
     }));
+  };
+
+  const handleConvertTinyUrl = async (id: number, type: 'ita' | 'eng') => {
+    const marchio = marchi.find(m => m.id === id);
+    if (!marchio) return;
+    
+    const currentUrl = type === 'ita' ? marchio.link_ita : marchio.link_eng;
+    if (!currentUrl || !currentUrl.includes('bit.ly')) {
+      alert('Il link attuale non è un URL bit.ly valido');
+      return;
+    }
+    
+    const result = await window.electronAPI.convertTinyUrl(currentUrl);
+    
+    if (result.shortLink) {
+      const confirmUpdate = confirm(`Link convertito!\n\nOriginale: ${currentUrl}\nNuovo: ${result.shortLink}\n\nVuoi aggiornare il link?`);
+      if (confirmUpdate) {
+        if (type === 'ita') {
+          await window.electronAPI.updateMarchio({ ...marchio, link_ita: result.shortLink });
+        } else {
+          await window.electronAPI.updateMarchio({ ...marchio, link_eng: result.shortLink });
+        }
+        await loadData();
+        alert('Link aggiornato!');
+      }
+    } else {
+      alert(result.error || 'Errore durante la conversione');
+    }
   };
 
   const handleSaveTemplates = async () => {
@@ -519,8 +548,14 @@ function App() {
                           <button onClick={() => handleTestLink(m.id, 'ita')} className="p-1.5 text-purple-600 hover:bg-purple-100 rounded" title="Test link ITA">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                           </button>
+                          <button onClick={() => handleConvertTinyUrl(m.id, 'ita')} className="p-1.5 text-orange-600 hover:bg-orange-100 rounded" title="Converti a TinyURL ITA">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                          </button>
                           <button onClick={() => handleTestLink(m.id, 'eng')} className="p-1.5 text-purple-600 hover:bg-purple-100 rounded" title="Test link ENG">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                          </button>
+                          <button onClick={() => handleConvertTinyUrl(m.id, 'eng')} className="p-1.5 text-orange-600 hover:bg-orange-100 rounded" title="Converti a TinyURL ENG">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
                           </button>
                           <button onClick={() => handleEditMarchio(m)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded" title="Modifica">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>

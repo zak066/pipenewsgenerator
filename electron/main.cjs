@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const log = require('electron-log');
 const { initDatabase, getDb } = require('./database.cjs');
-const { generateBitlyLink, testLink } = require('./bitly.cjs');
+const { generateBitlyLink, convertToTinyUrl, testLink } = require('./bitly.cjs');
 const { generateFile } = require('./fileGenerator.cjs');
 const { initAutoUpdater, checkForUpdates, downloadUpdate, installUpdate } = require('./updater.cjs');
 
@@ -86,6 +86,10 @@ ipcMain.handle('delete-marchio', (_, id) => {
 
 ipcMain.handle('generate-bitly', async (_, url) => {
   return await generateBitlyLink(url);
+});
+
+ipcMain.handle('convert-tinyurl', async (_, url) => {
+  return await convertToTinyUrl(url);
 });
 
 ipcMain.handle('test-link', async (_, url) => {

@@ -36,6 +36,30 @@ async function generateBitlyLink(longUrl) {
   }
 }
 
+async function convertToTinyUrl(bitlyUrl) {
+  if (!bitlyUrl || !bitlyUrl.includes('bit.ly')) {
+    return { shortLink: '', error: 'Il link non è un URL bit.ly valido' };
+  }
+  
+  try {
+    const response = await fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(bitlyUrl));
+    
+    if (!response.ok) {
+      return { shortLink: '', error: 'Errore durante la conversione' };
+    }
+    
+    const tinyUrl = await response.text();
+    if (tinyUrl === 'Error') {
+      return { shortLink: '', error: 'Impossibile convertire il link' };
+    }
+    
+    return { shortLink: tinyUrl };
+  } catch (err) {
+    log.error('TinyURL conversion failed:', err);
+    return { shortLink: '', error: 'Richiesta fallita. Controlla la connessione.' };
+  }
+}
+
 async function testLink(url) {
   if (!url || url.trim() === '') {
     return { status: 'invalid', message: 'Link non presente' };
@@ -57,4 +81,4 @@ async function testLink(url) {
   }
 }
 
-module.exports = { generateBitlyLink, testLink };
+module.exports = { generateBitlyLink, convertToTinyUrl, testLink };

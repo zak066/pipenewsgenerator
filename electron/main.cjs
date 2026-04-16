@@ -1,9 +1,10 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const log = require('electron-log');
 const { initDatabase, getDb } = require('./database.cjs');
 const { generateBitlyLink, testLink } = require('./bitly.cjs');
 const { generateFile } = require('./fileGenerator.cjs');
+const { initAutoUpdater, checkForUpdates, downloadUpdate, installUpdate } = require('./updater.cjs');
 
 log.initialize();
 log.transports.file.level = 'info';
@@ -21,6 +22,12 @@ function createWindow() {
       nodeIntegration: false,
     },
     title: 'Pipe Link Generator',
+    webContents: {
+      setWindowOpenHandler: ({ url }) => {
+        shell.openExternal(url);
+        return { action: 'deny' };
+      }
+    }
   });
 
   if (process.env.NODE_ENV === 'development') {
@@ -28,6 +35,7 @@ function createWindow() {
     mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    initAutoUpdater(mainWindow);
   }
 
   mainWindow.on('closed', () => {
@@ -146,4 +154,29 @@ ipcMain.handle('export-marchi', async () => {
     filenameIta: 'Elenco Link ITA.txt',
     filenameEng: 'Elenco Link ENG.txt'
   };
+});
+
+ipcMain.handle('open-external', async (_, url) => {
+  try {
+    await shell.openExternal(url);
+    return { success: true };
+  } catch (err) {
+    log.error('Error opening external URL:', err);
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('check-for-updates', () => {
+  checkForUpdates();
+  return { success: true };
+});
+
+ipcMain.handle('download-update', () => {
+  downloadUpdate();
+  return { success: true };
+});
+
+ipcMain.handle('install-update', () => {
+  installUpdate();
+  return { success: true };
 });

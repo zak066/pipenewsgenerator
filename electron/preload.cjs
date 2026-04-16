@@ -14,4 +14,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   generateFiles: (data) => ipcRenderer.invoke('generate-files', data),
   saveFile: (data) => ipcRenderer.invoke('save-file', data),
   exportMarchi: () => ipcRenderer.invoke('export-marchi'),
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  downloadUpdate: () => ipcRenderer.invoke('download-update'),
+  installUpdate: () => ipcRenderer.invoke('install-update'),
+  onUpdateAvailable: (callback) => ipcRenderer.on('update-available', (_, data) => callback(data)),
+  onUpdateProgress: (callback) => ipcRenderer.on('update-progress', (_, data) => callback(data)),
+  onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', (_, data) => callback(data)),
 });

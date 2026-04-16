@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 
+// Get version - this will be replaced during build
+const APP_VERSION = '1.0.0';
+
 interface Marchio {
   id: number;
   nome: string;
@@ -15,6 +18,20 @@ interface ElectronAPI {
   deleteMarchio: (id: number) => Promise<{ success: boolean }>;
   generateBitly: (url: string) => Promise<{ shortLink: string; error?: string }>;
   testLink: (url: string) => Promise<{ status: string; statusCode?: number; message: string }>;
+  getSettings: () => Promise<Record<string, string>>;
+  setSetting: (key: string, value: string) => Promise<{ success: boolean }>;
+  getTemplates: () => Promise<{ header_ita: string; header_eng: string; footer_ita: string; footer_eng: string } | null>;
+  saveTemplates: (templates: { header_ita: string; header_eng: string; footer_ita: string; footer_eng: string }) => Promise<{ success: boolean }>;
+  generateFiles: (data: { marchi: Marchio[]; templates: { header_ita: string; header_eng: string; footer_ita: string; footer_eng: string } }) => Promise<{ ita: string; eng: string; filenameIta: string; filenameEng: string }>;
+  saveFile: (data: { filename: string; content: string }) => Promise<{ success: boolean; path?: string }>;
+  exportMarchi: () => Promise<{ ita: string; eng: string; filenameIta: string; filenameEng: string }>;
+  openExternal: (url: string) => Promise<{ success: boolean; error?: string }>;
+  checkForUpdates: () => Promise<{ success: boolean }>;
+  downloadUpdate: () => Promise<{ success: boolean }>;
+  installUpdate: () => Promise<{ success: boolean }>;
+  onUpdateAvailable: (callback: (data: { version: string; releaseNotes?: string }) => void) => void;
+  onUpdateProgress: (callback: (data: { percent: number }) => void) => void;
+  onUpdateDownloaded: (callback: (data: { version: string }) => void) => void;
 }
 
 declare global {
@@ -50,9 +67,28 @@ function App() {
   const [formData, setFormData] = useState({ nome: '', link_ita: '', link_eng: '' });
   const [generatingLink, setGeneratingLink] = useState<{ field: 'ita' | 'eng'; loading: boolean } | null>(null);
   const [testingLinks, setTestingLinks] = useState<Record<number, { ita?: { status: string; message: string }; eng?: { status: string; message: string } }>>({});
+  
+  const [updateAvailable, setUpdateAvailable] = useState<{ version: string; releaseNotes?: string } | null>(null);
+  const [updateDownloading, setUpdateDownloading] = useState(false);
+  const [updateProgress, setUpdateProgress] = useState(0);
+  const [updateReady, setUpdateReady] = useState(false);
 
   useEffect(() => {
     loadData();
+    
+    if (window.electronAPI?.onUpdateAvailable) {
+      window.electronAPI.onUpdateAvailable((data) => {
+        setUpdateAvailable(data);
+      });
+      window.electronAPI.onUpdateProgress((data) => {
+        setUpdateDownloading(true);
+        setUpdateProgress(data.percent);
+      });
+      window.electronAPI.onUpdateDownloaded((data) => {
+        setUpdateDownloading(false);
+        setUpdateReady(true);
+      });
+    }
   }, []);
 
   const loadData = async () => {
@@ -250,7 +286,7 @@ function App() {
     setGeneratedFiles({ ita: itaContent, eng: engContent });
   };
 
-  const sendToWhatsApp = (lang: 'ita' | 'eng') => {
+  const sendToWhatsApp = async (lang: 'ita' | 'eng') => {
     if (!settings.whatsapp_number) {
       alert('Configura il numero WhatsApp nelle impostazioni');
       return;
@@ -272,8 +308,18 @@ function App() {
     }
     
     const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://web.whatsapp.com/send?phone=${settings.whatsapp_number}&text=${encodedMessage}`;
-    window.open(whatsappUrl, '_blank');
+    
+    // Prova prima con l'app desktop WhatsApp usando il deep link
+    const whatsappDesktopUrl = `whatsapp://send?phone=${settings.whatsapp_number}&text=${encodedMessage}`;
+    
+    // Prova ad aprire l'app desktop
+    const result = await window.electronAPI.openExternal(whatsappDesktopUrl);
+    
+    // Se non funziona, usa WhatsApp Web
+    if (!result.success) {
+      const whatsappWebUrl = `https://web.whatsapp.com/send?phone=${settings.whatsapp_number}&text=${encodedMessage}`;
+      await window.electronAPI.openExternal(whatsappWebUrl);
+    }
   };
 
   const selectedCount = selectedIds.size;
@@ -302,9 +348,51 @@ function App() {
           ))}
         </nav>
         <div className="p-4 text-xs text-gray-400 border-t border-gray-700">
-          v1.0.0
+          v{APP_VERSION}
         </div>
       </aside>
+
+      {updateAvailable && !updateReady && (
+        <div className="fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-lg shadow-lg max-w-sm z-50">
+          <div className="flex justify-between items-start mb-2">
+            <span className="font-bold">Nuova versione disponibile!</span>
+            <button onClick={() => setUpdateAvailable(null)} className="text-white hover:text-gray-200">✕</button>
+          </div>
+          <p className="text-sm mb-3">Versione {updateAvailable.version} disponibile</p>
+          {updateDownloading && (
+            <div className="mb-3">
+              <div className="w-full bg-blue-800 rounded-full h-2">
+                <div className="bg-white h-2 rounded-full" style={{ width: `${updateProgress}%` }}></div>
+              </div>
+              <p className="text-xs mt-1">Download: {Math.round(updateProgress)}%</p>
+            </div>
+          )}
+          <div className="flex gap-2">
+            {!updateDownloading && (
+              <button 
+                onClick={() => window.electronAPI.downloadUpdate()} 
+                className="bg-white text-blue-600 px-3 py-1 rounded text-sm font-medium hover:bg-blue-50"
+              >
+                Scarica
+              </button>
+            )}
+            {updateReady && (
+              <button 
+                onClick={() => window.electronAPI.installUpdate()} 
+                className="bg-green-500 text-white px-3 py-1 rounded text-sm font-medium hover:bg-green-600"
+              >
+                Installa e Riavvia
+              </button>
+            )}
+            <button 
+              onClick={() => setUpdateAvailable(null)} 
+              className="text-white text-sm hover:underline"
+            >
+              Più tardi
+            </button>
+          </div>
+        </div>
+      )}
 
       <main className="flex-1 overflow-auto p-6">
         {page === 'marchi' && (

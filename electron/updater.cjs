@@ -1,6 +1,7 @@
 const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
 const { app } = require('electron');
+const path = require('path');
 
 let mainWindow = null;
 
@@ -14,12 +15,18 @@ function initAutoUpdater(window) {
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.currentVersion = app.getVersion();
   
-  autoUpdater.feedURL = 'https://github.com/zak066/pipenewsgenerator/releases/latest';
+  const latestYamlPath = path.join(process.resourcesPath || app.getAppPath(), 'latest-linux.yml');
+  log.info('Latest yaml path:', latestYamlPath);
+  
+  try {
+    autoUpdater.updateInfo = require(latestYamlPath);
+    log.info('Loaded local update info:', autoUpdater.updateInfo);
+  } catch (e) {
+    log.info('Could not load local yaml, will check remote');
+  }
   
   log.info('=== AutoUpdater Debug ===');
   log.info('Current version:', autoUpdater.currentVersion);
-  log.info('Feed URL:', autoUpdater.feedURL);
-  log.info('App path:', app.getAppPath());
   log.info('============================');
   
   autoUpdater.on('checking-for-update', () => {
@@ -34,6 +41,40 @@ function initAutoUpdater(window) {
         releaseNotes: info.releaseNotes
       });
     }
+  });
+  
+  autoUpdater.on('update-not-available', () => {
+    log.info('No updates available');
+    if (mainWindow) {
+      mainWindow.webContents.send('update-not-available');
+    }
+  });
+  
+  autoUpdater.on('download-progress', (progress) => {
+    log.info('Download progress:', progress.percent);
+    if (mainWindow) {
+      mainWindow.webContents.send('update-progress', {
+        percent: progress.percent,
+        bytesPerSecond: progress.bytesPerSecond,
+        transferred: progress.transferred,
+        total: progress.total
+      });
+    }
+  });
+  
+  autoUpdater.on('update-downloaded', (info) => {
+    log.info('Update downloaded:', info.version);
+    if (mainWindow) {
+      mainWindow.webContents.send('update-downloaded', {
+        version: info.version
+      });
+    }
+  });
+  
+  autoUpdater.on('error', (err) => {
+    log.error('AutoUpdater error:', err.message);
+  });
+}
   });
   
   autoUpdater.on('update-not-available', () => {

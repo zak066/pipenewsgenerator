@@ -1,23 +1,73 @@
 const log = require('electron-log');
-const { app } = require('electron');
+const { app, net } = require('electron');
 
 let mainWindow = null;
-
-const LATEST_VERSION = '1.0.40';
+const GITHUB_OWNER = 'zak066';
+const GITHUB_REPO = 'pipenewsgenerator';
 
 function initAutoUpdater(window) {
   mainWindow = window;
   log.info('=== Manual Updater Initialized ===');
   log.info('Current version:', app.getVersion());
-  log.info('Latest version:', LATEST_VERSION);
 }
 
 function checkForUpdates() {
+  log.info('Checking for updates from GitHub...');
+  
+  const request = net.request({
+    method: 'GET',
+    protocol: 'https:',
+    hostname: 'api.github.com',
+    path: `/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`
+  });
+  
+  request.setHeader('User-Agent', 'Pipe-Link-Generator');
+  
+  let responseData = '';
+  
+  request.on('response', (response) => {
+    response.on('data', (chunk) => {
+      responseData += chunk;
+    });
+    
+    response.on('end', () => {
+      try {
+        if (response.statusCode === 200) {
+          const release = JSON.parse(responseData);
+          const latestVersion = release.tag_name?.replace('v', '') || '0.0.0';
+          log.info('GitHub latest version:', latestVersion);
+          compareVersions(latestVersion);
+        } else {
+          log.error('GitHub API error:', response.statusCode);
+          if (mainWindow) {
+            mainWindow.webContents.send('update-error', { message: 'Errore verifica aggiornamenti (HTTP ' + response.statusCode + ')' });
+          }
+        }
+      } catch (e) {
+        log.error('Error parsing GitHub response:', e.message);
+        if (mainWindow) {
+          mainWindow.webContents.send('update-error', { message: 'Errore parsing risposta GitHub' });
+        }
+      }
+    });
+  });
+  
+  request.on('error', (err) => {
+    log.error('Network error:', err.message);
+    if (mainWindow) {
+      mainWindow.webContents.send('update-error', { message: 'Errore di rete: ' + err.message });
+    }
+  });
+  
+  request.end();
+}
+
+function compareVersions(latestVersion) {
   const currentVersion = app.getVersion();
   const currentParts = currentVersion.split('.').map(Number);
-  const latestParts = LATEST_VERSION.split('.').map(Number);
+  const latestParts = latestVersion.split('.').map(Number);
   
-  log.info('Current:', currentVersion, 'Latest:', LATEST_VERSION);
+  log.info('Current:', currentVersion, 'Latest:', latestVersion);
   
   let isUpdateAvailable = false;
   for (let i = 0; i < Math.max(currentParts.length, latestParts.length); i++) {
@@ -33,10 +83,10 @@ function checkForUpdates() {
   }
   
   if (isUpdateAvailable) {
-    log.info('Update available:', LATEST_VERSION);
+    log.info('Update available:', latestVersion);
     if (mainWindow) {
       mainWindow.webContents.send('update-available', {
-        version: LATEST_VERSION,
+        version: latestVersion,
         releaseNotes: 'Nuova versione disponibile'
       });
     }
@@ -49,13 +99,13 @@ function checkForUpdates() {
 }
 
 function downloadUpdate() {
-  log.info('Download update - opens GitHub releases');
+  log.info('Opening GitHub releases...');
   const { shell } = require('electron');
-  shell.openExternal('https://github.com/zak066/pipenewsgenerator/releases');
+  shell.openExternal(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases`);
 }
 
 function installUpdate() {
-  log.info('Install update - not automatic, user must download manually');
+  downloadUpdate();
 }
 
 module.exports = {

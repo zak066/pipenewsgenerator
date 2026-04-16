@@ -128,3 +128,57 @@ pipe-link-generator/
 ## License
 
 MIT
+
+---
+
+## Pubblicazione Aggiornamenti
+
+### Workflow Completo
+
+1. **Aggiorna il codice** (se necessario)
+   ```bash
+   git add .
+   git commit -m "Descrizione modifiche"
+   git push origin master
+   ```
+
+2. **Incrementa la versione**
+   Modifica `version` in `package.json` (es. da "1.0.0" a "1.0.1")
+
+3. **Build Linux**
+   ```bash
+   npm run build:linux
+   ```
+   Il file `.AppImage` viene generato in `release/`
+
+4. **Build Windows**
+   Sul PC Windows:
+   ```bash
+   npm run build:win
+   ```
+   Il file `.exe` viene generato in `release/`
+
+5. **Pubblica su GitHub**
+   - Vai su https://github.com/zak066/pipenewsgenerator/releases
+   - Crea una nuova release con tag `v1.0.1`
+   - Carica entrambi i file (`.AppImage` + `.exe`)
+
+### Con Script (Linux)
+
+```bash
+./build-and-publish.sh 1.0.1
+```
+
+### Con Script (Windows)
+
+```batch
+build-and-publish.bat 1.0.1
+```
+
+---
+
+### Note Importanti
+
+- Il tag della release DEVE iniziare con `v` (es. `v1.0.1`)
+- L'auto-update funziona automaticamente per tutti gli utenti
+- Gli utenti riceveranno una notifica quando una nuova versione è disponibile

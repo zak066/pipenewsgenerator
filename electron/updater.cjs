@@ -1,5 +1,6 @@
 const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
+const { app } = require('electron');
 
 let mainWindow = null;
 
@@ -11,6 +12,7 @@ function initAutoUpdater(window) {
   
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.currentVersion = app.getVersion();
   
   autoUpdater.on('checking-for-update', () => {
     log.info('Checking for updates...');
@@ -54,13 +56,15 @@ function initAutoUpdater(window) {
   autoUpdater.on('error', (err) => {
     log.error('AutoUpdater error:', err);
   });
-  
-  checkForUpdates();
+
+  setTimeout(() => {
+    checkForUpdates();
+  }, 3000);
 }
 
 function checkForUpdates() {
   autoUpdater.checkForUpdates().catch(err => {
-    log.error('Error checking for updates:', err);
+    log.error('Error checking for updates:', err.message);
   });
 }
 

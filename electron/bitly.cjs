@@ -42,7 +42,12 @@ async function convertToTinyUrl(bitlyUrl) {
   }
   
   try {
-    const response = await fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(bitlyUrl));
+    const resolved = await resolveBitlyUrl(bitlyUrl);
+    if (!resolved) {
+      return { shortLink: '', error: 'Impossibile risolvere l\'URL bit.ly' };
+    }
+    
+    const response = await fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(resolved));
     
     if (!response.ok) {
       return { shortLink: '', error: 'Errore durante la conversione' };
@@ -57,6 +62,25 @@ async function convertToTinyUrl(bitlyUrl) {
   } catch (err) {
     log.error('TinyURL conversion failed:', err);
     return { shortLink: '', error: 'Richiesta fallita. Controlla la connessione.' };
+  }
+}
+
+async function resolveBitlyUrl(bitlyUrl) {
+  try {
+    const response = await fetch(bitlyUrl, {
+      method: 'GET',
+      redirect: 'manual'
+    });
+    
+    if (response.status === 301 || response.status === 302) {
+      const location = response.headers.get('location');
+      return location || null;
+    }
+    
+    return null;
+  } catch (err) {
+    log.error('Failed to resolve bit.ly URL:', err);
+    return null;
   }
 }
 
@@ -81,4 +105,4 @@ async function testLink(url) {
   }
 }
 
-module.exports = { generateBitlyLink, convertToTinyUrl, testLink };
+module.exports = { generateBitlyLink, convertToTinyUrl, testLink, resolveBitlyUrl };

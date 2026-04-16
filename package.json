@@ -1,6 +1,6 @@
 {
   "name": "pipe-link-generator",
-  "version": "1.0.34",
+  "version": "1.0.35",
   "description": "Applicazione per generare file promozionali con marchi di pipe",
   "main": "electron/main.cjs",
   "scripts": {
@@ -54,14 +54,19 @@
     "asarUnpack": [
       "node_modules/better-sqlite3/**/*"
     ],
+    "extraResources": [
+      {
+        "from": "release/latest-linux.yml",
+        "to": "latest-linux.yml"
+      }
+    ],
     "directories": {
       "output": "release"
     },
     "files": [
       "dist/**/*",
       "electron/**/*",
-      "repository/**/*",
-      "release/latest*.yml"
+      "repository/**/*"
     ],
     "extraMetadata": {
       "main": "electron/main.cjs"

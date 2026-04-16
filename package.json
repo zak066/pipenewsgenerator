@@ -50,6 +50,7 @@
   "build": {
     "appId": "com.pipelinkgenerator.app",
     "productName": "Pipe Link Generator",
+    "version": "1.0.1",
     "asar": true,
     "asarUnpack": [
       "node_modules/better-sqlite3/**/*"

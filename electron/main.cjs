@@ -145,9 +145,7 @@ ipcMain.handle('set-setting', (_, key, value) => {
     return { error: err.message };
   }
 });
-  return { success: true };
-});
-
+  
 ipcMain.handle('get-templates', () => {
   try {
     const db = getDb();
@@ -214,8 +212,6 @@ ipcMain.handle('export-marchi', async () => {
     log.error('Error exporting marchi:', err);
     return { error: err.message };
   }
-});
-  };
 });
 
 ipcMain.handle('open-external', async (_, url) => {

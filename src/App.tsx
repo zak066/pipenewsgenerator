@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 // Get version - this will be replaced during build
-const APP_VERSION = '1.0.32';
+const APP_VERSION = '1.0.33';
 
 interface Marchio {
   id: number;
@@ -75,6 +75,7 @@ function App() {
   const [updateProgress, setUpdateProgress] = useState(0);
   const [updateReady, setUpdateReady] = useState(false);
   const [updateMessage, setUpdateMessage] = useState<string | null>(null);
+  const [updateChecking, setUpdateChecking] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -820,10 +821,14 @@ function App() {
             <div className="bg-white p-6 rounded shadow max-w-xl">
               <p className="text-sm text-gray-600 mb-4">Versione attuale: <strong>{APP_VERSION}</strong></p>
               <button 
-                onClick={() => window.electronAPI.checkForUpdates()} 
-                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                onClick={() => {
+                  setUpdateChecking(true);
+                  window.electronAPI.checkForUpdates().finally(() => setTimeout(() => setUpdateChecking(false), 3000));
+                }} 
+                disabled={updateChecking}
+                className={`px-4 py-2 rounded text-white ${updateChecking ? 'bg-gray-400' : 'bg-purple-600 hover:bg-purple-700'}`}
               >
-                Verifica aggiornamenti
+                {updateChecking ? 'Verifica in corso...' : 'Verifica aggiornamenti'}
               </button>
             </div>
           </div>

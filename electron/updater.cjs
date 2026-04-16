@@ -8,11 +8,19 @@ function initAutoUpdater(window) {
   mainWindow = window;
   
   autoUpdater.logger = log;
-  autoUpdater.logger.transports.file.level = 'info';
+  autoUpdater.logger.transports.file.level = 'debug';
   
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.currentVersion = app.getVersion();
+  
+  autoUpdater.feedURL = 'https://github.com/zak066/pipenewsgenerator/releases/latest';
+  
+  log.info('=== AutoUpdater Debug ===');
+  log.info('Current version:', autoUpdater.currentVersion);
+  log.info('Feed URL:', autoUpdater.feedURL);
+  log.info('App path:', app.getAppPath());
+  log.info('============================');
   
   autoUpdater.on('checking-for-update', () => {
     log.info('Checking for updates...');
@@ -56,8 +64,12 @@ function initAutoUpdater(window) {
     }
   });
   
-autoUpdater.on('error', (err) => {
+  autoUpdater.on('error', (err) => {
     log.error('AutoUpdater error:', err.message);
+  });
+  
+  autoUpdater.on('full-log', (text) => {
+    log.info('Full log:', text);
   });
 }
 

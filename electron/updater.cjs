@@ -3,7 +3,7 @@ const { app } = require('electron');
 
 let mainWindow = null;
 
-const LATEST_VERSION = '1.0.36';
+const LATEST_VERSION = '1.0.38';
 
 function initAutoUpdater(window) {
   mainWindow = window;

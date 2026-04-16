@@ -1,5 +1,17 @@
 # Pipe Link Generator
 
+⚠️ **AVVISO IMPORTANTE - PROGRAMMA DI TEST** ⚠️
+
+Questa applicazione è stata sviluppata esclusivamente per scopi di **testing e sviluppo**. 
+
+**Si sconsiglia fortemente l'utilizzo in ambiente di produzione** in quanto:
+- Potrebbe contenere bug non ancora individuati
+- Non è stata testata approfonditamente
+- Il supporto è limitato
+- Potrebbe subire modifiche radicali senza preavviso
+
+---
+
 Applicazione desktop cross-platform per gestire e generare file promozionali con marchi di pipe.
 
 ---

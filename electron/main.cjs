@@ -60,28 +60,52 @@ app.on('window-all-closed', () => {
 });
 
 ipcMain.handle('get-marchi', () => {
-  const db = getDb();
-  return db.prepare('SELECT * FROM marchi ORDER BY nome').all();
+  try {
+    const db = getDb();
+    if (!db) return [];
+    return db.prepare('SELECT * FROM marchi ORDER BY nome').all();
+  } catch (err) {
+    log.error('Error getting marchi:', err);
+    return [];
+  }
 });
 
 ipcMain.handle('add-marchio', (_, marchio) => {
-  const db = getDb();
-  const stmt = db.prepare('INSERT INTO marchi (nome, link_ita, link_eng) VALUES (?, ?, ?)');
-  const result = stmt.run(marchio.nome, marchio.link_ita, marchio.link_eng);
-  return { id: result.lastInsertRowid, ...marchio };
+  try {
+    const db = getDb();
+    if (!db) return { error: 'Database not initialized' };
+    const stmt = db.prepare('INSERT INTO marchi (nome, link_ita, link_eng) VALUES (?, ?, ?)');
+    const result = stmt.run(marchio.nome, marchio.link_ita, marchio.link_eng);
+    return { id: result.lastInsertRowid, ...marchio };
+  } catch (err) {
+    log.error('Error adding marchio:', err);
+    return { error: err.message };
+  }
 });
 
 ipcMain.handle('update-marchio', (_, marchio) => {
-  const db = getDb();
-  const stmt = db.prepare('UPDATE marchi SET nome = ?, link_ita = ?, link_eng = ? WHERE id = ?');
-  stmt.run(marchio.nome, marchio.link_ita, marchio.link_eng, marchio.id);
-  return marchio;
+  try {
+    const db = getDb();
+    if (!db) return { error: 'Database not initialized' };
+    const stmt = db.prepare('UPDATE marchi SET nome = ?, link_ita = ?, link_eng = ? WHERE id = ?');
+    stmt.run(marchio.nome, marchio.link_ita, marchio.link_eng, marchio.id);
+    return marchio;
+  } catch (err) {
+    log.error('Error updating marchio:', err);
+    return { error: err.message };
+  }
 });
 
 ipcMain.handle('delete-marchio', (_, id) => {
-  const db = getDb();
-  db.prepare('DELETE FROM marchi WHERE id = ?').run(id);
-  return { success: true };
+  try {
+    const db = getDb();
+    if (!db) return { error: 'Database not initialized' };
+    db.prepare('DELETE FROM marchi WHERE id = ?').run(id);
+    return { success: true };
+  } catch (err) {
+    log.error('Error deleting marchio:', err);
+    return { error: err.message };
+  }
 });
 
 ipcMain.handle('generate-bitly', async (_, url) => {
@@ -97,30 +121,56 @@ ipcMain.handle('test-link', async (_, url) => {
 });
 
 ipcMain.handle('get-settings', () => {
-  const db = getDb();
-  const rows = db.prepare('SELECT key, value FROM settings').all();
-  const settings = {};
-  rows.forEach(row => { settings[row.key] = row.value; });
-  return settings;
+  try {
+    const db = getDb();
+    if (!db) return {};
+    const rows = db.prepare('SELECT key, value FROM settings').all();
+    const settings = {};
+    rows.forEach(row => { settings[row.key] = row.value; });
+    return settings;
+  } catch (err) {
+    log.error('Error getting settings:', err);
+    return {};
+  }
 });
 
 ipcMain.handle('set-setting', (_, key, value) => {
-  const db = getDb();
-  db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, value);
+  try {
+    const db = getDb();
+    if (!db) return { error: 'Database not initialized' };
+    db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, value);
+    return { success: true };
+  } catch (err) {
+    log.error('Error setting value:', err);
+    return { error: err.message };
+  }
+});
   return { success: true };
 });
 
 ipcMain.handle('get-templates', () => {
-  const db = getDb();
-  return db.prepare('SELECT * FROM templates WHERE is_default = 1').get();
+  try {
+    const db = getDb();
+    if (!db) return null;
+    return db.prepare('SELECT * FROM templates WHERE is_default = 1').get();
+  } catch (err) {
+    log.error('Error getting templates:', err);
+    return null;
+  }
 });
 
 ipcMain.handle('save-templates', (_, templates) => {
-  const db = getDb();
-  db.prepare('DELETE FROM templates WHERE is_default = 1').run();
-  db.prepare('INSERT INTO templates (nome, header_ita, header_eng, footer_ita, footer_eng, is_default) VALUES (?, ?, ?, ?, ?, 1)')
-    .run('default', templates.header_ita, templates.header_eng, templates.footer_ita, templates.footer_eng);
-  return { success: true };
+  try {
+    const db = getDb();
+    if (!db) return { error: 'Database not initialized' };
+    db.prepare('DELETE FROM templates WHERE is_default = 1').run();
+    db.prepare('INSERT INTO templates (nome, header_ita, header_eng, footer_ita, footer_eng, is_default) VALUES (?, ?, ?, ?, ?, 1)')
+      .run('default', templates.header_ita, templates.header_eng, templates.footer_ita, templates.footer_eng);
+    return { success: true };
+  } catch (err) {
+    log.error('Error saving templates:', err);
+    return { error: err.message };
+  }
 });
 
 ipcMain.handle('generate-files', async (_, data) => {
@@ -141,22 +191,30 @@ ipcMain.handle('save-file', async (_, { filename, content }) => {
 });
 
 ipcMain.handle('export-marchi', async () => {
-  const db = getDb();
-  const marchi = db.prepare('SELECT nome, link_ita, link_eng FROM marchi ORDER BY nome').all();
-  
-  let itaContent = '';
-  let engContent = '';
-  
-  marchi.forEach(m => {
-    itaContent += '_' + m.nome + '_\n' + (m.link_ita || '') + '\n\n';
-    engContent += '_' + m.nome + '_\n' + (m.link_eng || '') + '\n\n';
-  });
-  
-  return {
-    ita: itaContent,
-    eng: engContent,
-    filenameIta: 'Elenco Link ITA.txt',
-    filenameEng: 'Elenco Link ENG.txt'
+  try {
+    const db = getDb();
+    if (!db) return { error: 'Database not initialized' };
+    const marchi = db.prepare('SELECT nome, link_ita, link_eng FROM marchi ORDER BY nome').all();
+    
+    let itaContent = '';
+    let engContent = '';
+    
+    marchi.forEach(m => {
+      itaContent += '_' + m.nome + '_\n' + (m.link_ita || '') + '\n\n';
+      engContent += '_' + m.nome + '_\n' + (m.link_eng || '') + '\n\n';
+    });
+    
+    return {
+      ita: itaContent,
+      eng: engContent,
+      filenameIta: 'Elenco Link ITA.txt',
+      filenameEng: 'Elenco Link ENG.txt'
+    };
+  } catch (err) {
+    log.error('Error exporting marchi:', err);
+    return { error: err.message };
+  }
+});
   };
 });
 

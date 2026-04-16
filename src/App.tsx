@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 // Get version - this will be replaced during build
-const APP_VERSION = '1.0.38';
+const APP_VERSION = '1.0.39';
 
 interface Marchio {
   id: number;

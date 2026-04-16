@@ -41,7 +41,7 @@ declare global {
   }
 }
 
-type Page = 'marchi' | 'templates' | 'generate' | 'settings';
+type Page = 'marchi' | 'templates' | 'generate' | 'settings' | 'updates';
 
 function App() {
   const [page, setPage] = useState<Page>('marchi');
@@ -365,6 +365,7 @@ function App() {
             { id: 'templates', label: 'Template', icon: '📝' },
             { id: 'generate', label: 'Genera File', icon: '⚡' },
             { id: 'settings', label: 'Impostazioni', icon: '⚙️' },
+            { id: 'updates', label: 'Aggiornamenti', icon: '🔄' },
           ].map(item => (
             <button
               key={item.id}
@@ -382,15 +383,15 @@ function App() {
       </aside>
 
       {updateAvailable && !updateReady && (
-        <div className="fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-lg shadow-lg max-w-sm z-50">
+        <div className="fixed bottom-4 right-4 bg-green-600 text-white p-4 rounded-lg shadow-lg max-w-sm z-50">
           <div className="flex justify-between items-start mb-2">
-            <span className="font-bold">Nuova versione disponibile!</span>
+            <span className="font-bold">Nuovo aggiornamento disponibile!</span>
             <button onClick={() => setUpdateAvailable(null)} className="text-white hover:text-gray-200">✕</button>
           </div>
-          <p className="text-sm mb-3">Versione {updateAvailable.version} disponibile</p>
+          <p className="text-sm mb-3">Versione {updateAvailable.version} è disponibile (attuale: {APP_VERSION})</p>
           {updateDownloading && (
             <div className="mb-3">
-              <div className="w-full bg-blue-800 rounded-full h-2">
+              <div className="w-full bg-green-800 rounded-full h-2">
                 <div className="bg-white h-2 rounded-full" style={{ width: `${updateProgress}%` }}></div>
               </div>
               <p className="text-xs mt-1">Download: {Math.round(updateProgress)}%</p>
@@ -400,7 +401,7 @@ function App() {
             {!updateDownloading && (
               <button 
                 onClick={() => window.electronAPI.downloadUpdate()} 
-                className="bg-white text-blue-600 px-3 py-1 rounded text-sm font-medium hover:bg-blue-50"
+                className="bg-white text-green-600 px-3 py-1 rounded text-sm font-medium hover:bg-green-50"
               >
                 Scarica
               </button>
@@ -408,7 +409,7 @@ function App() {
             {updateReady && (
               <button 
                 onClick={() => window.electronAPI.installUpdate()} 
-                className="bg-green-500 text-white px-3 py-1 rounded text-sm font-medium hover:bg-green-600"
+                className="bg-blue-500 text-white px-3 py-1 rounded text-sm font-medium hover:bg-blue-600"
               >
                 Installa e Riavvia
               </button>
@@ -797,9 +798,14 @@ function App() {
                 <button onClick={() => handleSaveSetting('whatsapp_number', settings.whatsapp_number || '')} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Salva</button>
               </div>
             </div>
-            <div className="bg-white p-6 rounded shadow max-w-xl mb-4">
-              <h3 className="font-bold mb-3">Aggiornamenti</h3>
-              <p className="text-sm text-gray-600 mb-3">Versione attuale: {APP_VERSION}</p>
+          </div>
+        )}
+
+        {page === 'updates' && (
+          <div>
+            <h1 className="text-2xl font-bold mb-4">Aggiornamenti</h1>
+            <div className="bg-white p-6 rounded shadow max-w-xl">
+              <p className="text-sm text-gray-600 mb-4">Versione attuale: <strong>{APP_VERSION}</strong></p>
               <button 
                 onClick={() => window.electronAPI.checkForUpdates()} 
                 className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"

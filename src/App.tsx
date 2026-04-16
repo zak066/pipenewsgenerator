@@ -41,7 +41,7 @@ function App() {
     footer_eng: '',
   });
 
-  const [settings, setSettings] = useState({ bitly_token: '' });
+  const [settings, setSettings] = useState<Record<string, string>>({ bitly_token: '', whatsapp_number: '' });
   const [generatedFiles, setGeneratedFiles] = useState<{ ita: string; eng: string } | null>(null);
   const [generating, setGenerating] = useState(false);
   const [orderedMarchi, setOrderedMarchi] = useState<Marchio[]>([]);

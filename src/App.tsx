@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 // Get version - this will be replaced during build
-const APP_VERSION = '1.0.43';
+const APP_VERSION = '1.0.46';
 
 interface Marchio {
   id: number;
@@ -181,11 +181,11 @@ function App() {
     const url = field === 'ita' ? formData.link_ita : formData.link_eng;
     if (!url) return;
     setGeneratingLink({ field, loading: true });
-    const result = await window.electronAPI.generateBitly(url);
+    const result = await window.electronAPI.convertTinyUrl(url);
     if (result.shortLink) {
       setFormData(prev => ({ ...prev, [field === 'ita' ? 'link_ita' : 'link_eng']: result.shortLink }));
     } else {
-      alert(result.error || 'Errore generazione link');
+      alert(result.error || 'Errore conversione link');
     }
     setGeneratingLink(null);
   };
@@ -495,10 +495,10 @@ function App() {
                     />
                     <button
                       onClick={() => handleGenerateBitly('ita')}
-                      disabled={!formData.link_ita || generatingLink?.field === 'ita'}
-                      className="px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+                      disabled={!formData.link_ita || generatingLink?.field === 'ita' || formData.link_ita.includes('tinyurl.com')}
+                      className="px-3 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
                     >
-                      {generatingLink?.field === 'ita' ? '...' : '🔗 bit.ly'}
+                      {generatingLink?.field === 'ita' ? '...' : '🔗 TinyURL'}
                     </button>
                   </div>
                   <div className="flex gap-2">
@@ -511,10 +511,10 @@ function App() {
                     />
                     <button
                       onClick={() => handleGenerateBitly('eng')}
-                      disabled={!formData.link_eng || generatingLink?.field === 'eng'}
-                      className="px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+                      disabled={!formData.link_eng || generatingLink?.field === 'eng' || formData.link_eng.includes('tinyurl.com')}
+                      className="px-3 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
                     >
-                      {generatingLink?.field === 'eng' ? '...' : '🔗 bit.ly'}
+                      {generatingLink?.field === 'eng' ? '...' : '🔗 TinyURL'}
                     </button>
                   </div>
                   <div className="flex gap-2 mt-2">
@@ -568,15 +568,19 @@ function App() {
                           <button onClick={() => handleTestLink(m.id, 'ita')} className="p-1.5 text-purple-600 hover:bg-purple-100 rounded" title="Test link ITA">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                           </button>
-                          <button onClick={() => handleConvertTinyUrl(m.id, 'ita')} className="p-1.5 text-orange-600 hover:bg-orange-100 rounded" title="Converti a TinyURL ITA">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
-                          </button>
+                          {m.link_ita && !m.link_ita.includes('tinyurl.com') && (
+                            <button onClick={() => handleConvertTinyUrl(m.id, 'ita')} className="p-1.5 text-orange-600 hover:bg-orange-100 rounded" title="Converti a TinyURL ITA">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                            </button>
+                          )}
                           <button onClick={() => handleTestLink(m.id, 'eng')} className="p-1.5 text-purple-600 hover:bg-purple-100 rounded" title="Test link ENG">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
                           </button>
-                          <button onClick={() => handleConvertTinyUrl(m.id, 'eng')} className="p-1.5 text-orange-600 hover:bg-orange-100 rounded" title="Converti a TinyURL ENG">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
-                          </button>
+                          {m.link_eng && !m.link_eng.includes('tinyurl.com') && (
+                            <button onClick={() => handleConvertTinyUrl(m.id, 'eng')} className="p-1.5 text-orange-600 hover:bg-orange-100 rounded" title="Converti a TinyURL ENG">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                            </button>
+                          )}
                           <button onClick={() => handleEditMarchio(m)} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded" title="Modifica">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                           </button>

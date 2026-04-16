@@ -36,29 +36,48 @@ async function generateBitlyLink(longUrl) {
   }
 }
 
-async function convertToTinyUrl(bitlyUrl) {
-  if (!bitlyUrl || !bitlyUrl.includes('bit.ly')) {
-    return { shortLink: '', error: 'Il link non è un URL bit.ly valido' };
+async function convertToTinyUrl(url) {
+  if (!url || url.trim() === '') {
+    return { shortLink: '', error: 'Nessun URL da convertire' };
+  }
+  
+  const db = getDb();
+  const settings = db.prepare('SELECT value FROM settings WHERE key = ?').get('tinyurl_token');
+  
+  if (!settings || !settings.value) {
+    return { shortLink: '', error: 'Token TinyURL non configurato. Vai nelle Impostazioni.' };
   }
   
   try {
-    const resolved = await resolveBitlyUrl(bitlyUrl);
-    if (!resolved) {
-      return { shortLink: '', error: 'Impossibile risolvere l\'URL bit.ly' };
+    let urlToConvert = url;
+    
+    if (url.includes('bit.ly')) {
+      const resolved = await resolveBitlyUrl(url);
+      if (!resolved) {
+        return { shortLink: '', error: 'Impossibile risolvere l\'URL bit.ly' };
+      }
+      urlToConvert = resolved;
     }
     
-    const response = await fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(resolved));
+    const response = await fetch('https://api.tinyurl.com/create', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + settings.value,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: urlToConvert,
+      }),
+    });
     
     if (!response.ok) {
-      return { shortLink: '', error: 'Errore durante la conversione' };
+      const errorData = await response.json().catch(() => ({}));
+      log.error('TinyURL API error:', errorData);
+      return { shortLink: '', error: 'Errore API TinyURL: ' + (errorData.errors?.[0]?.message || response.statusText) };
     }
     
-    const tinyUrl = await response.text();
-    if (tinyUrl === 'Error') {
-      return { shortLink: '', error: 'Impossibile convertire il link' };
-    }
-    
-    return { shortLink: tinyUrl };
+    const data = await response.json();
+    return { shortLink: data.data?.tiny_url || data.tiny_url || '' };
   } catch (err) {
     log.error('TinyURL conversion failed:', err);
     return { shortLink: '', error: 'Richiesta fallita. Controlla la connessione.' };

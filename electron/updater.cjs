@@ -53,13 +53,15 @@ function initAutoUpdater(window) {
     }
   });
   
-  autoUpdater.on('error', (err) => {
-    log.error('AutoUpdater error:', err);
+autoUpdater.on('error', (err) => {
+    log.error('AutoUpdater error:', err.message);
   });
+}
 
-  setTimeout(() => {
-    checkForUpdates();
-  }, 3000);
+function checkForUpdates() {
+  autoUpdater.checkForUpdates().catch(err => {
+    log.error('Error checking for updates:', err.message);
+  });
 }
 
 function checkForUpdates() {

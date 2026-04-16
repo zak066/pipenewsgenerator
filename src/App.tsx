@@ -797,6 +797,16 @@ function App() {
                 <button onClick={() => handleSaveSetting('whatsapp_number', settings.whatsapp_number || '')} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Salva</button>
               </div>
             </div>
+            <div className="bg-white p-6 rounded shadow max-w-xl mb-4">
+              <h3 className="font-bold mb-3">Aggiornamenti</h3>
+              <p className="text-sm text-gray-600 mb-3">Versione attuale: {APP_VERSION}</p>
+              <button 
+                onClick={() => window.electronAPI.checkForUpdates()} 
+                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+              >
+                Verifica aggiornamenti
+              </button>
+            </div>
           </div>
         )}
       </main>

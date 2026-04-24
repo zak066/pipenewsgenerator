@@ -95,7 +95,21 @@ CREATE TABLE settings (
 
 ### 4. Impostazioni
 - Configurazione API token bit.ly
+- Configurazione API token TinyURL
 - Numero WhatsApp per invio messaggi
+- **Backup e ripristino database**
+
+### 4.1 Backup Database
+- Esportazione del database in file SQL
+- Scelta della posizione di salvataggio tramite dialog di sistema
+- File nominato con timestamp (`pipe-link-backup-YYYY-MM-DDTHH-MM-SS.sql`)
+- Dump completo di tutte le tabelle (marchi, templates, settings)
+
+### 4.2 Ripristino Database
+- Selezione file SQL da ripristinare
+- Validazione che il file contenga un backup valido (header "-- Backup Pipe Link Generator")
+- Conferma richiesta prima di sovrascrivere
+- Sostituzione completa dei dati esistenti
 
 ---
 
@@ -164,6 +178,8 @@ npm run build:mac
 | `generate-files` | Genera il contenuto dei file |
 | `save-file` | Salva file su disco |
 | `export-marchi` | Esporta tutti i marchi |
+| `backup-database` | Crea backup del database |
+| `restore-database` | Ripristina da backup |
 
 ---
 
@@ -180,6 +196,7 @@ npm run build:mac
 - [x] Drag & drop riordinamento
 - [x] Anteprima messaggi
 - [x] Invio WhatsApp
+- [x] Backup e ripristino database
 
 ---
 

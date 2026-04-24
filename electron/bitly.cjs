@@ -1,19 +1,54 @@
 const { getDb } = require('./database.cjs');
 const log = require('electron-log');
+const config = require('./config.cjs');
+const { ExternalApiError, wrapError } = require('./errors.cjs');
+
+let cachedTokens = {
+  bitly: null,
+  tinyurl: null
+};
+
+let tokenCacheTime = 0;
+const TOKEN_CACHE_TTL = 60000;
+
+function getCachedToken(key) {
+  const now = Date.now();
+  if (now - tokenCacheTime > TOKEN_CACHE_TTL || cachedTokens[key] === null) {
+    cachedTokens[key] = null;
+    tokenCacheTime = now;
+  }
+  return cachedTokens[key];
+}
+
+function setCachedToken(key, value) {
+  cachedTokens[key] = value;
+  tokenCacheTime = Date.now();
+}
+
+function clearTokenCache() {
+  cachedTokens = { bitly: null, tinyurl: null };
+  tokenCacheTime = 0;
+}
 
 async function generateBitlyLink(longUrl) {
-  const db = getDb();
-  const settings = db.prepare('SELECT value FROM settings WHERE key = ?').get('bitly_token');
-  
-  if (!settings || !settings.value) {
-    return { shortLink: '', error: 'API token bit.ly non configurato. Vai nelle impostazioni.' };
-  }
-  
   try {
-    const response = await fetch('https://api-ssl.bitly.com/v4/shorten', {
+    let token = getCachedToken('bitly');
+    if (!token) {
+      const db = getDb();
+      if (!db) throw new ExternalApiError('bitly', 'Database non inizializzato');
+      const settings = db.prepare('SELECT value FROM settings WHERE key = ?').get('bitly_token');
+      token = settings?.value || null;
+      setCachedToken('bitly', token);
+    }
+    
+    if (!token) {
+      return { shortLink: '', error: 'API token bit.ly non configurato. Vai nelle impostazioni.' };
+    }
+    
+    const response = await fetch(config.api.bitly.baseUrl + config.api.bitly.endpoints.shorten, {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer ' + settings.value,
+        'Authorization': 'Bearer ' + token,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -23,7 +58,7 @@ async function generateBitlyLink(longUrl) {
     });
     
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({}));
       log.error('Bit.ly API error:', errorData);
       return { shortLink: '', error: 'Errore API: ' + (errorData.description || response.statusText) };
     }
@@ -32,23 +67,30 @@ async function generateBitlyLink(longUrl) {
     return { shortLink: data.link };
   } catch (err) {
     log.error('Bit.ly request failed:', err);
-    return { shortLink: '', error: 'Richiesta fallita. Controlla la connessione.' };
+    const appError = wrapError(err, 'Richiesta bit.ly fallita');
+    return { shortLink: '', error: appError.message };
   }
 }
 
 async function convertToTinyUrl(url) {
-  if (!url || url.trim() === '') {
-    return { shortLink: '', error: 'Nessun URL da convertire' };
-  }
-  
-  const db = getDb();
-  const settings = db.prepare('SELECT value FROM settings WHERE key = ?').get('tinyurl_token');
-  
-  if (!settings || !settings.value) {
-    return { shortLink: '', error: 'Token TinyURL non configurato. Vai nelle Impostazioni.' };
-  }
-  
   try {
+    if (!url || url.trim() === '') {
+      return { shortLink: '', error: 'Nessun URL da convertire' };
+    }
+    
+    let token = getCachedToken('tinyurl');
+    if (!token) {
+      const db = getDb();
+      if (!db) throw new ExternalApiError('tinyurl', 'Database non inizializzato');
+      const settings = db.prepare('SELECT value FROM settings WHERE key = ?').get('tinyurl_token');
+      token = settings?.value || null;
+      setCachedToken('tinyurl', token);
+    }
+    
+    if (!token) {
+      return { shortLink: '', error: 'Token TinyURL non configurato. Vai nelle Impostazioni.' };
+    }
+    
     let urlToConvert = url;
     
     if (url.includes('bit.ly')) {
@@ -59,10 +101,10 @@ async function convertToTinyUrl(url) {
       urlToConvert = resolved;
     }
     
-    const response = await fetch('https://api.tinyurl.com/create', {
+    const response = await fetch(config.api.tinyurl.baseUrl + config.api.tinyurl.endpoints.create, {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer ' + settings.value,
+        'Authorization': 'Bearer ' + token,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -80,7 +122,8 @@ async function convertToTinyUrl(url) {
     return { shortLink: data.data?.tiny_url || data.tiny_url || '' };
   } catch (err) {
     log.error('TinyURL conversion failed:', err);
-    return { shortLink: '', error: 'Richiesta fallita. Controlla la connessione.' };
+    const appError = wrapError(err, 'Conversione TinyURL fallita');
+    return { shortLink: '', error: appError.message };
   }
 }
 
@@ -124,4 +167,10 @@ async function testLink(url) {
   }
 }
 
-module.exports = { generateBitlyLink, convertToTinyUrl, testLink, resolveBitlyUrl };
+module.exports = {
+  generateBitlyLink,
+  convertToTinyUrl,
+  testLink,
+  resolveBitlyUrl,
+  clearTokenCache
+};

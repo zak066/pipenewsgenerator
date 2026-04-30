@@ -41,18 +41,6 @@ export interface GeneratedFiles {
   filenameEng: string;
 }
 
-export interface UpdateInfo {
-  version: string;
-  releaseNotes?: string;
-}
-
-export interface BackupResult {
-  success: boolean;
-  path?: string;
-  canceled?: boolean;
-  error?: string;
-}
-
 export interface ElectronAPI {
   getMarchi: () => Promise<Marchio[]>;
   addMarchio: (marchio: MarchioInput) => Promise<Marchio>;
@@ -72,13 +60,13 @@ export interface ElectronAPI {
   checkForUpdates: () => Promise<{ success: boolean }>;
   downloadUpdate: () => Promise<{ success: boolean }>;
   installUpdate: () => Promise<{ success: boolean }>;
-  onUpdateAvailable: (callback: (data: UpdateInfo) => void) => void;
+  onUpdateAvailable: (callback: (data: { version: string; releaseNotes?: string }) => void) => void;
   onUpdateProgress: (callback: (data: { percent: number }) => void) => void;
-  onUpdateDownloaded: (callback: (data: UpdateInfo) => void) => void;
+  onUpdateDownloaded: (callback: (data: { version: string }) => void) => void;
   onUpdateNotAvailable: (callback: () => void) => void;
   onUpdateError: (callback: (data: { message: string }) => void) => void;
-  backupDatabase: () => Promise<BackupResult>;
-  restoreDatabase: () => Promise<BackupResult>;
+  backupDatabase: () => Promise<{ success: boolean; path?: string; canceled?: boolean; error?: string }>;
+  restoreDatabase: () => Promise<{ success: boolean; path?: string; canceled?: boolean; error?: string }>;
 }
 
 declare global {

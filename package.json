@@ -2,6 +2,7 @@
   "name": "pipe-link-generator",
   "version": "1.0.47",
   "description": "Applicazione per generare file promozionali con marchi di pipe",
+  "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "concurrently \"npm run dev:vite\" \"npm run dev:electron\"",
@@ -12,7 +13,18 @@
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac",
     "build:linux": "npm run build && electron-builder --linux",
-    "rebuild": "electron-rebuild -f -w better-sqlite3"
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:watch": "vitest watch",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "analyze:deps": "depcheck",
+    "analyze:unused": "ts-prune",
+    "analyze:all": "npm run analyze:deps && npm run analyze:unused && npm run lint"
   },
   "keywords": [
     "pipe",
@@ -24,19 +36,30 @@
   "license": "MIT",
   "devDependencies": {
     "@electron/rebuild": "^4.0.3",
+    "@eslint/js": "^10.0.1",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^15.0.7",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
-    "autoprefixer": "^10.5.0",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
+    "depcheck": "^1.4.7",
     "electron": "^41.2.1",
     "electron-builder": "^26.8.1",
-    "postcss": "^8.5.10",
-    "tailwindcss": "^4.2.2",
+    "eslint": "^10.2.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "jsdom": "^29.1.0",
+    "prettier": "^3.8.3",
+    "ts-prune": "^0.10.3",
     "typescript": "^6.0.2",
+    "typescript-eslint": "^8.59.1",
     "vite": "^8.0.8",
+    "vitest": "^4.1.5",
     "wait-on": "^9.0.5"
   },
   "dependencies": {
@@ -71,9 +94,6 @@
     "extraMetadata": {
       "main": "electron/main.cjs"
     },
-    "asarUnpack": [
-      "node_modules/better-sqlite3/**/*"
-    ],
     "win": {
       "target": "portable"
     },

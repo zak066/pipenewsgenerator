@@ -36,9 +36,10 @@ export function MarchioForm({ editingMarchio, onSave, onCancel }: MarchioFormPro
     e.preventDefault();
     const validation = validateMarchio(formData);
     if (!validation.success) {
+      const error = validation.error as any;
       const fieldErrors: Record<string, string> = {};
-      validation.error.errors.forEach(err => {
-        if (err.path[0]) fieldErrors[err.path[0] as string] = err.message;
+      error?.errors?.forEach((err: any) => {
+        if (err.path?.[0]) fieldErrors[err.path[0] as string] = err.message;
       });
       setErrors(fieldErrors);
       return;

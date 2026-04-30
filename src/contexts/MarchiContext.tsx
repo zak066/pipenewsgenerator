@@ -2,19 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { Marchio, MarchioInput, LinkTestResults } from '../types';
 import { electronApi } from '../api/electron';
 import { validateMarchio } from '../utils/validation';
-
-interface ToastContextType {
-  success: (message: string) => void;
-  error: (message: string) => void;
-}
-
-const ToastContext = createContext<ToastContextType | null>(null);
-
-export function useToastContext() {
-  const context = useContext(ToastContext);
-  if (!context) throw new Error('useToastContext must be used within ToastContext provider');
-  return context;
-}
+import { useConfirm } from '../hooks/useConfirm';
 
 function createToastEvent(message: string, type: 'success' | 'error' | 'info') {
   window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }));
@@ -89,7 +77,8 @@ export function MarchiProvider({ children }: { children: React.ReactNode }) {
   const addMarchio = useCallback(async (data: MarchioInput): Promise<Marchio> => {
     const validation = validateMarchio(data);
     if (!validation.success) {
-      createToastEvent(validation.error.errors[0]?.message || 'Dati non validi', 'error');
+      const error = validation.error as any;
+      createToastEvent(error?.errors?.[0]?.message || 'Dati non validi', 'error');
       throw new Error('Validation failed');
     }
     const result = await electronApi.addMarchio(data);
@@ -101,7 +90,8 @@ export function MarchiProvider({ children }: { children: React.ReactNode }) {
   const updateMarchio = useCallback(async (marchio: Marchio): Promise<Marchio> => {
     const validation = validateMarchio(marchio);
     if (!validation.success) {
-      createToastEvent(validation.error.errors[0]?.message || 'Dati non validi', 'error');
+      const error = validation.error as any;
+      createToastEvent(error?.errors?.[0]?.message || 'Dati non validi', 'error');
       throw new Error('Validation failed');
     }
     const result = await electronApi.updateMarchio(marchio);
@@ -146,6 +136,8 @@ export function MarchiProvider({ children }: { children: React.ReactNode }) {
     }));
   }, [marchi]);
 
+  const { confirm } = useConfirm();
+
   const convertToTinyUrl = useCallback(async (id: number, type: 'ita' | 'eng') => {
     const marchio = marchi.find(m => m.id === id);
     if (!marchio) return;
@@ -156,7 +148,12 @@ export function MarchiProvider({ children }: { children: React.ReactNode }) {
     }
     const result = await electronApi.convertTinyUrl(currentUrl);
     if (result.shortLink) {
-      if (confirm(`Link convertito!\n\nOriginale: ${currentUrl}\nNuovo: ${result.shortLink}\n\nVuoi aggiornare il link?`)) {
+      const confirmed = await confirm(
+        'Link convertito!',
+        `Originale: ${currentUrl}\nNuovo: ${result.shortLink}\n\nVuoi aggiornare il link?`
+      );
+      
+      if (confirmed) {
         await electronApi.updateMarchio({ ...marchio, [type === 'ita' ? 'link_ita' : 'link_eng']: result.shortLink });
         await refresh();
         createToastEvent('Link aggiornato con successo!', 'success');
@@ -164,7 +161,7 @@ export function MarchiProvider({ children }: { children: React.ReactNode }) {
     } else {
       createToastEvent(result.error || 'Errore durante la conversione', 'error');
     }
-  }, [marchi, refresh]);
+  }, [marchi, refresh, confirm]);
 
   const generateBitly = useCallback(async (id: number, type: 'ita' | 'eng') => {
     const marchio = marchi.find(m => m.id === id);

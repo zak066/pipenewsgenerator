@@ -14,7 +14,7 @@ export function Input({
   id,
   ...props
 }: InputProps) {
-  const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+  const inputId = id || `input-${React.useId()}`;
   
   return (
     <div className="flex flex-col gap-1">
@@ -51,7 +51,7 @@ export function Textarea({
   id,
   ...props
 }: TextareaProps) {
-  const textareaId = id || `textarea-${Math.random().toString(36).substr(2, 9)}`;
+  const textareaId = id || `textarea-${React.useId()}`;
   
   return (
     <div className="flex flex-col gap-1">

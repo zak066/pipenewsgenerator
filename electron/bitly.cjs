@@ -78,6 +78,8 @@ async function convertToTinyUrl(url) {
       return { shortLink: '', error: 'Nessun URL da convertire' };
     }
     
+    log.info('TinyURL: converting URL:', url);
+    
     let token = getCachedToken('tinyurl');
     if (!token) {
       const db = getDb();
@@ -88,19 +90,24 @@ async function convertToTinyUrl(url) {
     }
     
     if (!token) {
+      log.warn('TinyURL: no token configured');
       return { shortLink: '', error: 'Token TinyURL non configurato. Vai nelle Impostazioni.' };
     }
     
     let urlToConvert = url;
     
     if (url.includes('bit.ly')) {
+      log.info('TinyURL: resolving bit.ly URL:', url);
       const resolved = await resolveBitlyUrl(url);
       if (!resolved) {
+        log.warn('TinyURL: failed to resolve bit.ly URL');
         return { shortLink: '', error: 'Impossibile risolvere l\'URL bit.ly' };
       }
       urlToConvert = resolved;
+      log.info('TinyURL: resolved to:', urlToConvert);
     }
     
+    log.info('TinyURL: calling API with URL:', urlToConvert);
     const response = await fetch(config.api.tinyurl.baseUrl + config.api.tinyurl.endpoints.create, {
       method: 'POST',
       headers: {
@@ -112,6 +119,8 @@ async function convertToTinyUrl(url) {
       }),
     });
     
+    log.info('TinyURL: API response status:', response.status);
+    
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       log.error('TinyURL API error:', errorData);
@@ -119,30 +128,17 @@ async function convertToTinyUrl(url) {
     }
     
     const data = await response.json();
-    return { shortLink: data.data?.tiny_url || data.tiny_url || '' };
+    log.info('TinyURL: response data:', data);
+    const shortLink = data.data?.tiny_url || data.tiny_url || data.url || data.short_url || '';
+    if (!shortLink) {
+      log.error('TinyURL: no short link in response', data);
+      return { shortLink: '', error: 'Errore: impossibile ottenere il link corto' };
+    }
+    return { shortLink };
   } catch (err) {
     log.error('TinyURL conversion failed:', err);
     const appError = wrapError(err, 'Conversione TinyURL fallita');
     return { shortLink: '', error: appError.message };
-  }
-}
-
-async function resolveBitlyUrl(bitlyUrl) {
-  try {
-    const response = await fetch(bitlyUrl, {
-      method: 'GET',
-      redirect: 'manual'
-    });
-    
-    if (response.status === 301 || response.status === 302) {
-      const location = response.headers.get('location');
-      return location || null;
-    }
-    
-    return null;
-  } catch (err) {
-    log.error('Failed to resolve bit.ly URL:', err);
-    return null;
   }
 }
 
@@ -164,6 +160,25 @@ async function testLink(url) {
     }
   } catch (err) {
     return { status: 'error', message: 'Errore: ' + err.message };
+  }
+}
+
+async function resolveBitlyUrl(bitlyUrl) {
+  try {
+    const response = await fetch(bitlyUrl, {
+      method: 'GET',
+      redirect: 'manual'
+    });
+    
+    if (response.status === 301 || response.status === 302) {
+      const location = response.headers.get('location');
+      return location || null;
+    }
+    
+    return null;
+  } catch (err) {
+    log.error('Failed to resolve bit.ly URL:', err);
+    return null;
   }
 }
 

@@ -102,7 +102,7 @@ function initDatabase() {
     log.info('No marchi found, importing initial data...');
     importInitialData();
   } else {
-    const engCheck = db.prepare(`SELECT link_eng FROM ${config.tables.marchi} WHERE link_eng IS NOT NULL AND link_eng != "" LIMIT 1`).get();
+    const engCheck = db.prepare(`SELECT link_eng FROM ${config.tables.marchi} WHERE link_eng IS NOT NULL AND link_eng != '' LIMIT 1`).get();
     if (!engCheck) {
       log.warn('English links missing, updating...');
       reimportEngLinks();

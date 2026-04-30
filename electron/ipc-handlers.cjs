@@ -1,4 +1,5 @@
 const { ipcMain, dialog } = require('electron');
+const fs = require('fs');
 const { getDb } = require('./database.cjs');
 const { generateBitlyLink, convertToTinyUrl, testLink } = require('./bitly.cjs');
 const { initAutoUpdater, checkForUpdates, downloadUpdate, installUpdate } = require('./updater.cjs');
@@ -228,6 +229,24 @@ function registerHandlers(mainWindow) {
       return { success: false };
     } catch (err) {
       return handleError(err, 'save-file');
+    }
+  });
+
+  ipcMain.handle('resolve-urls', async (_, urls) => {
+    try {
+      const { resolveShortUrl } = require('./bitly.cjs');
+      const resolved = [];
+      for (const url of urls) {
+        if (!url) {
+          resolved.push('');
+          continue;
+        }
+        const realUrl = await resolveShortUrl(url);
+        resolved.push(realUrl);
+      }
+      return { success: true, urls: resolved };
+    } catch (err) {
+      return handleError(err, 'resolve-urls');
     }
   });
 

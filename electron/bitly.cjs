@@ -182,10 +182,28 @@ async function resolveBitlyUrl(bitlyUrl) {
   }
 }
 
+async function resolveShortUrl(shortUrl) {
+  try {
+    log.info('Resolving short URL:', shortUrl);
+    const response = await fetch(shortUrl, {
+      method: 'HEAD',
+      redirect: 'follow'
+    });
+    
+    const finalUrl = response.url;
+    log.info('Resolved to:', finalUrl);
+    return finalUrl || shortUrl;
+  } catch (err) {
+    log.error('Failed to resolve short URL:', err);
+    return shortUrl;
+  }
+}
+
 module.exports = {
   generateBitlyLink,
   convertToTinyUrl,
   testLink,
   resolveBitlyUrl,
+  resolveShortUrl,
   clearTokenCache
 };

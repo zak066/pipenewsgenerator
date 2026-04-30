@@ -1,6 +1,6 @@
 {
   "name": "pipe-link-generator",
-  "version": "1.0.47",
+  "version": "1.0.48",
   "description": "Applicazione per generare file promozionali con marchi di pipe",
   "type": "module",
   "main": "electron/main.cjs",

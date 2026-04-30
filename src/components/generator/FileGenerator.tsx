@@ -10,6 +10,7 @@ interface FileGeneratorProps {
   selectedCount: number;
   onGenerate: () => void;
   onDownload: (filename: string) => void;
+  onDownloadEngUrls: () => void;
   onSendWhatsApp: (lang: 'ita' | 'eng') => void;
   onReorder: (fromIndex: number, toIndex: number) => void;
   onNavigateToMarchi: () => void;
@@ -24,6 +25,7 @@ export function FileGenerator({
   selectedCount,
   onGenerate,
   onDownload,
+  onDownloadEngUrls,
   onSendWhatsApp,
   onReorder,
   onNavigateToMarchi,
@@ -68,6 +70,9 @@ export function FileGenerator({
               </button>
               <button onClick={() => onDownload('pipe-en.txt')} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
                 Scarica ENG ↓
+              </button>
+              <button onClick={onDownloadEngUrls} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                Scarica URL ENG ↓
               </button>
             </div>
           </div>

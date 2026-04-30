@@ -100,4 +100,8 @@ export const electronApi: ElectronAPI = {
   async restoreDatabase(): Promise<{ success: boolean; path?: string; canceled?: boolean; error?: string }> {
     return window.electronAPI.restoreDatabase();
   },
+
+  async resolveUrls(urls: string[]): Promise<{ success: boolean; urls?: string[]; error?: string }> {
+    return window.electronAPI.resolveUrls(urls);
+  },
 };

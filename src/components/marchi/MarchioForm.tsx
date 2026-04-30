@@ -67,14 +67,16 @@ export function MarchioForm({ editingMarchio, onSave, onCancel }: MarchioFormPro
           />
           {errors.nome && <p className="text-red-500 text-xs mt-1">{errors.nome}</p>}
         </div>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Link ITA"
-            value={formData.link_ita}
-            onChange={e => setFormData(prev => ({ ...prev, link_ita: e.target.value }))}
-            className={`flex-1 p-2 border rounded ${errors.link_ita ? 'border-red-500' : ''}`}
-          />
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
+            <label className="block text-xs text-gray-600 mb-1">Link (Italiano)</label>
+            <input
+              type="text"
+              placeholder="Link ITA"
+              value={formData.link_ita}
+              onChange={e => setFormData(prev => ({ ...prev, link_ita: e.target.value }))}
+              className={`w-full p-2 border rounded ${errors.link_ita ? 'border-red-500' : ''}`}
+            />
           <button
             type="button"
             onClick={() => handleGenerateBitly('ita')}
@@ -84,15 +86,18 @@ export function MarchioForm({ editingMarchio, onSave, onCancel }: MarchioFormPro
             {generatingLink?.field === 'ita' ? '...' : '🔗 TinyURL'}
           </button>
         </div>
-        {errors.link_ita && <p className="text-red-500 text-xs -mt-2">{errors.link_ita}</p>}
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Link ENG"
-            value={formData.link_eng}
-            onChange={e => setFormData(prev => ({ ...prev, link_eng: e.target.value }))}
-            className={`flex-1 p-2 border rounded ${errors.link_eng ? 'border-red-500' : ''}`}
-          />
+          {errors.link_ita && <p className="text-red-500 text-xs -mt-2">{errors.link_ita}</p>}
+        </div>
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
+            <label className="block text-xs text-gray-600 mb-1">Link (English)</label>
+            <input
+              type="text"
+              placeholder="Link ENG"
+              value={formData.link_eng}
+              onChange={e => setFormData(prev => ({ ...prev, link_eng: e.target.value }))}
+              className={`w-full p-2 border rounded ${errors.link_eng ? 'border-red-500' : ''}`}
+            />
           <button
             type="button"
             onClick={() => handleGenerateBitly('eng')}
@@ -102,7 +107,8 @@ export function MarchioForm({ editingMarchio, onSave, onCancel }: MarchioFormPro
             {generatingLink?.field === 'eng' ? '...' : '🔗 TinyURL'}
           </button>
         </div>
-        {errors.link_eng && <p className="text-red-500 text-xs -mt-2">{errors.link_eng}</p>}
+          {errors.link_eng && <p className="text-red-500 text-xs -mt-2">{errors.link_eng}</p>}
+        </div>
         <div className="flex gap-2 mt-2">
           <button type="submit" disabled={saving} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50">
             {saving ? 'Salvataggio...' : 'Salva'}

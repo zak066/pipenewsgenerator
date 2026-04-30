@@ -1,8 +1,6 @@
 import React from 'react';
 import { Page } from '../../types';
 
-const APP_VERSION = '1.0.47';
-
 const navItems = [
   { id: 'marchi' as Page, label: 'Marchi', icon: '📋' },
   { id: 'templates' as Page, label: 'Template', icon: '📝' },
@@ -35,7 +33,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
         ))}
       </nav>
       <div className="p-4 text-xs text-gray-400 border-t border-gray-700">
-        v{APP_VERSION}
+        v{__APP_VERSION__}
       </div>
     </aside>
   );

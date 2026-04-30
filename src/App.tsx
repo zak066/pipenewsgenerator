@@ -50,6 +50,26 @@ function AppContent() {
     window.dispatchEvent(new CustomEvent('toast', { detail: { message: `File ${filename} salvato!`, type: 'success' } }));
   }, [orderedMarchi, templates]);
 
+  const handleDownloadEngUrls = useCallback(async () => {
+    const urls = orderedMarchi
+      .map(m => m.link_eng || '')
+      .filter(url => url);
+
+    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Risoluzione URL in corso...', type: 'info' } }));
+
+    const result = await window.electronAPI.resolveUrls(urls);
+    
+    if (!result.success || !result.urls) {
+      window.dispatchEvent(new CustomEvent('toast', { detail: { message: result.error || 'Errore risoluzione URL', type: 'error' } }));
+      return;
+    }
+
+    const content = result.urls.join('\n');
+    
+    window.electronAPI.saveFile({ filename: 'pipe-eng-urls.txt', content });
+    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'File URL ENG salvato!', type: 'success' } }));
+  }, [orderedMarchi]);
+
   const handleSendWhatsApp = useCallback((lang: 'ita' | 'eng') => {
     sendWhatsApp(lang, templates, settings.whatsapp_number || '');
     window.dispatchEvent(new CustomEvent('toast', { detail: { message: `Apertura WhatsApp per versione ${lang === 'ita' ? 'italiana' : 'inglese'}...`, type: 'info' } }));
@@ -92,6 +112,7 @@ function AppContent() {
             selectedCount={selectedCount}
             onGenerate={handleGenerate}
             onDownload={handleDownload}
+            onDownloadEngUrls={handleDownloadEngUrls}
             onSendWhatsApp={handleSendWhatsApp}
             onReorder={handleReorder}
             onNavigateToMarchi={() => setPage('marchi')}
